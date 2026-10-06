@@ -23,8 +23,13 @@ public sealed class PaymentsResource
         Guard.NotEmpty(request.Reference, nameof(request.Reference));
         Guard.MaxLength(request.Reference, 50, nameof(request.Reference));
         Guard.MaxLength(request.Description, 125, nameof(request.Description));
-        Guard.Url(request.ReturnUrl, nameof(request.ReturnUrl));
-        Guard.Url(request.WebhookUrl, nameof(request.WebhookUrl));
+
+        // return_url e webhook_url são opcionais na API.
+        if (!string.IsNullOrWhiteSpace(request.ReturnUrl))
+            Guard.Url(request.ReturnUrl, nameof(request.ReturnUrl));
+
+        if (!string.IsNullOrWhiteSpace(request.WebhookUrl))
+            Guard.Url(request.WebhookUrl, nameof(request.WebhookUrl));
 
         return _api.GetDataAsync<Payment>(
             HttpMethod.Post,
@@ -32,9 +37,18 @@ public sealed class PaymentsResource
             request,
             ct);
     }
+
     public Task<Payment> GetAsync(string id, CancellationToken ct = default)
         => _api.GetDataAsync<Payment>(HttpMethod.Get, $"payments/{Guard.Id(id)}", ct: ct);
 
     public Task<PagedResponse<Payment>> ListAsync(int page = 1, int limit = 20, CancellationToken ct = default)
-        => _api.SendAsync<PagedResponse<Payment>>(HttpMethod.Get, $"payments?page={page}&limit={limit}", ct: ct);
+    {
+        Guard.Range(page, 1, int.MaxValue, nameof(page));
+        Guard.Range(limit, 1, 100, nameof(limit));   // doc: máx. 100
+
+        return _api.SendAsync<PagedResponse<Payment>>(
+            HttpMethod.Get,
+            $"payments?page={page}&limit={limit}",
+            ct: ct);
+    }
 }

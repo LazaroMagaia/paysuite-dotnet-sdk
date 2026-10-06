@@ -29,3 +29,25 @@ public sealed record Payout
     public Beneficiary? Beneficiary { get; init; }
     public DateTimeOffset? CreatedAt { get; init; }
 }
+
+public static class PayoutMethods
+{
+    public const string MPesa = "mpesa";
+    public const string Emola = "emola";
+    public const string Mkesh = "mkesh";
+    public const string Bank = "bank";
+    public const string BankTransfer = "bank_transfer";
+
+    public static bool IsValid(string? method)
+    {
+        return method switch
+        {
+            MPesa => true,
+            Emola => true,
+            Mkesh => true,
+            Bank => true,
+            BankTransfer => true,
+            _ => false
+        };
+    }
+}
