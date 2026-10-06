@@ -1,0 +1,21 @@
+services:
+  paysuite-sdk:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    container_name: paysuite-sdk
+
+    volumes:
+      - nuget_cache:/root/.nuget/packages
+
+    working_dir: /app
+
+    command:
+      - dotnet
+      - test
+      - PaySuite.Sdk.slnx
+      - --no-build
+
+volumes:
+  nuget_cache:

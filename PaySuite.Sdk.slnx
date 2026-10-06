@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/PaySuite.Sdk/PaySuite.Sdk.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/PaySuite.Sdk.Tests/PaySuite.Sdk.Tests.csproj" />
+  </Folder>
+</Solution>
