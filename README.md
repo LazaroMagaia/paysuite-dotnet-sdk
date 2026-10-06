@@ -253,7 +253,7 @@ Limite da API: **100 pedidos por minuto** por conta.
 | Campo | Regra |
 |---|---|
 | Payment `Amount` | 10 a 1.000.000 MZN <!-- VERIFICAR: mínimo de 10 não consta na doc --> |
-| Payment `Reference` | obrigatória, máx. 50 caracteres |
+| Payment Reference | Obrigatória, com no máximo 50 caracteres, contendo apenas letras e dígitos |
 | Payment `Description` | máx. 125 caracteres |
 | Payout `Amount` | 1 a 1.000.000 MZN |
 | Payout `Reference` | obrigatória, alfanumérica, máx. 30 caracteres |
