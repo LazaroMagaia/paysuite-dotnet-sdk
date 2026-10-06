@@ -4,7 +4,7 @@
 
 SDK oficial em .NET para a API da [PaySuite](https://paysuite.tech/docs), a plataforma de pagamentos moçambicana. Permite receber pagamentos (M-Pesa, e-Mola, cartão), enviar payouts, fazer reembolsos e gerir contactos, com validação dos dados antes de o pedido sair da tua aplicação.
 
-> Este projecto é desenvolvido e mantido pela PaySuite. A fonte de verdade da API é sempre a [documentação oficial](https://paysuite.tech/docs).
+> Este projecto é desenvolvido e mantido pela PaySuite. [documentação oficial](https://paysuite.tech/docs).
 
 ## O que podes fazer
 
