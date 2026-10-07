@@ -79,7 +79,7 @@ public sealed class PaymentsResource
     /// <summary>
     /// Obtém a lista paginada de pagamentos.
     /// </summary>
-    public Task<ApiResponse<PagedResponse<Payment>>> ListAsync(
+    public Task<PagedResponse<Payment>> ListAsync(
         int page = 1,
         int limit = 20,
         CancellationToken ct = default)
@@ -96,7 +96,7 @@ public sealed class PaymentsResource
             100,
             nameof(limit));
 
-        return _api.GetDataAsync<PagedResponse<Payment>>(
+        return _api.SendAsync<PagedResponse<Payment>>(
             HttpMethod.Get,
             $"payments?page={page}&limit={limit}",
             ct: ct);
