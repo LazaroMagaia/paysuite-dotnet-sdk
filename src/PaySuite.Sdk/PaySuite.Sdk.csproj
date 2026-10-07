@@ -9,7 +9,7 @@
 
     <!-- Identidade do pacote -->
     <PackageId>PaySuite.Sdk</PackageId>
-    <Version>0.1.1</Version>
+    <Version>0.1.2</Version>
     <Authors>Lazaro Magaia</Authors>
     <Description>SDK .NET não oficial (comunitário) para a API PaySuite: pagamentos (M-Pesa, e-Mola, Mkesh, cartões), payouts, reembolsos e contactos.</Description>
     <PackageTags>paysuite;mpesa;emola;mkesh;mozambique;payments;sdk</PackageTags>
