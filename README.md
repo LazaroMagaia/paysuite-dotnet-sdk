@@ -1,286 +1,1471 @@
-# paysuite-dotnet-sdk
-
 # PaySuite .NET SDK
 
-SDK não oficial em .NET para a API da [PaySuite](https://paysuite.tech/docs), a plataforma de pagamentos moçambicana. Permite receber pagamentos (M-Pesa, e-Mola, cartão), enviar payouts, fazer reembolsos e gerir contactos, com validação dos dados antes de o pedido sair da tua aplicação.
+SDK não oficial em .NET para integração com a API da PaySuite.
 
-Aviso: Este projeto não é oficial, não é afiliado, não é patrocinado nem é mantido pela PaySuite. Trata-se de uma implementação independente da comunidade para facilitar a integração com a API da PaySuite.
-> Este projecto não é desenvolvido e nem mantido pela PaySuite. [documentação oficial](https://paysuite.tech/docs).
+Este projeto disponibiliza uma API .NET tipada e organizada por recursos para facilitar a integração com os serviços da PaySuite.
 
-## O que podes fazer
+> ⚠️ **Aviso:** este é um SDK não oficial. Este projeto não é afiliado, patrocinado, mantido ou oficialmente suportado pela PaySuite.
 
-| Recurso | Operações |
-|---|---|
-| **Payments** (pagamentos) | criar, consultar, listar |
-| **Payouts** (envio de dinheiro) | criar, consultar, listar |
-| **Refunds** (reembolsos) | criar, consultar, listar |
-| **Contacts** (clientes) | criar, consultar, actualizar, apagar, listar |
+---
 
-Todos os métodos são assíncronos (`async/await`) e aceitam um `CancellationToken`.
+## 📚 Documentação oficial
 
-## Instalação
+A documentação oficial da API pode ser consultada em:
 
-<!-- VERIFICAR: nome do pacote no NuGet e versão mínima do .NET -->
+https://paysuite.tech/docs
+
+---
+
+# 🚀 Funcionalidades
+
+| Recurso  | Operações                                                |
+| -------- | -------------------------------------------------------- |
+| Payments | Criar, consultar e listar pagamentos                     |
+| Payouts  | Criar, consultar e listar payouts                        |
+| Refunds  | Criar, consultar e listar reembolsos                     |
+| Contacts | Criar, consultar, atualizar, eliminar e listar contactos |
+
+---
+
+# 📦 Instalação
+
+Instale o SDK através do NuGet:
 
 ```bash
 dotnet add package PaySuite.Sdk
 ```
 
-## Primeiros passos
+Depois:
 
-1. Cria uma conta em [paysuite.tech](https://paysuite.tech).
-2. No painel, vai a **Settings > API Settings** gerar e copia o teu token.
-3. Guarda o token fora do código (variável de ambiente, user-secrets, Key Vault). **Nunca o envies para o Git.**
+```csharp
+using PaySuite.Sdk;
+```
 
-<!-- VERIFICAR: nome da classe cliente e forma de construção -->
+---
+
+# 🔑 Autenticação
+
+O SDK utiliza um token Bearer para autenticação.
+
+É recomendado utilizar uma variável de ambiente.
+
+### Linux / macOS
+
+```bash
+export PAYSUITE_TOKEN="seu-token"
+```
+
+### Windows PowerShell
+
+```powershell
+$env:PAYSUITE_TOKEN="seu-token"
+```
+
+No código:
+
+```csharp
+var token = Environment.GetEnvironmentVariable("PAYSUITE_TOKEN");
+
+if (string.IsNullOrWhiteSpace(token))
+{
+    throw new InvalidOperationException(
+        "PAYSUITE_TOKEN não configurado."
+    );
+}
+```
+
+---
+
+# 🏁 Quick Start
 
 ```csharp
 using PaySuite.Sdk;
 
-var client = new PaySuiteClient(
-    Environment.GetEnvironmentVariable("PAYSUITE_TOKEN")!);
-```
+var token = Environment.GetEnvironmentVariable("PAYSUITE_TOKEN");
 
-Os recursos ficam disponíveis no cliente: `client.Payments`, `client.Payouts`, `client.Refunds` e `client.Contacts`.
-
-## Pagamentos
-
-### Criar um pagamento
-
-```csharp
-using PaySuite.Sdk.Models;
-
-var payment = await client.Payments.CreateAsync(new CreatePaymentRequest
+if (string.IsNullOrWhiteSpace(token))
 {
-    Amount      = 100.50m,                              // obrigatório — valor em MZN
-    Reference   = "INV2024001",                         // obrigatório — único, máx. 50 caracteres
+    throw new InvalidOperationException(
+        "PAYSUITE_TOKEN não configurado."
+    );
+}
 
-    // Opcional — identifica/explica o pagamento.
-    // Se não for informado, o pagamento será criado sem uma descrição.
-    Description = "Pagamento da fatura 2024001",        // máx. 125 caracteres
-
-    // Opcional — define o método de pagamento.
-    // Se não for informado, a PaySuite poderá apresentar
-    // as opções disponíveis no checkout, conforme a configuração
-    // da conta/API.
-    Method      = PaymentMethods.MPesa,
-
-    // Opcional — URL para onde o cliente poderá ser redirecionado
-    // depois de terminar o checkout.
-    // Se não for informado, não haverá ReturnUrl personalizada
-    // enviada pela nossa aplicação.
-    ReturnUrl   = "https://oteusite.co.mz/obrigado",
-
-    // Opcional — URL que a PaySuite utiliza para enviar
-    // notificações (webhooks) sobre alterações do pagamento.
-    // Se não for informado, a nossa aplicação não receberá
-    // essas notificações através deste pagamento.
-    WebhookUrl  = "https://oteusite.co.mz/webhooks/paysuite"
-});
-
-// URL do checkout hospedado pela PaySuite.
-Console.WriteLine(payment.CheckoutUrl);
+using var client = new PaySuiteClient(token);
 ```
 
-Métodos de pagamento disponíveis em `PaymentMethods`: `CreditCard`, `MPesa`, `Emola`.
-
-Se não indicares `WebhookUrl`, a PaySuite usa o webhook configurado na tua conta.
-
-### Consultar e listar
+Depois disso:
 
 ```csharp
-var payment = await client.Payments.GetAsync("01H8X9V8X9Y8Z9A8B8C8D8E8F8");
-Console.WriteLine(payment.Status);
-
-var page = await client.Payments.ListAsync(page: 1, limit: 20);
-foreach (var p in page.Data)
-    Console.WriteLine($"{p.Reference}: {p.Amount} MZN ({p.Status})");
+client.Payments
+client.Payouts
+client.Refunds
+client.Contacts
 ```
 
-## Payouts (enviar dinheiro)
+ficam disponíveis para utilização.
 
-O saldo é reservado quando o payout é criado e fica reservado até ele ser concluído ou falhar.
+---
 
-### Para carteira móvel (M-Pesa, e-Mola, mKesh)
+# 📦 Estrutura das respostas
+
+Os métodos dos Resources retornam `ApiResponse<T>`.
+
+Por exemplo:
 
 ```csharp
-var payout = await client.Payouts.CreateAsync(new CreatePayoutRequest
+var response = await client.Payments.GetAsync(
+    "01m487646hbykkwxzvknchfp0w"
+);
+```
+
+Neste caso:
+
+```text
+ApiResponse<Payment>
+├── Success
+├── Message
+├── Status
+└── Data
+    └── Payment
+        ├── Id
+        ├── Amount
+        ├── Reference
+        └── Status
+```
+
+## Response vs Data
+
+É importante distinguir os dados da resposta dos dados do recurso.
+
+### Dados da resposta
+
+```csharp
+response.Success
+response.Message
+response.Status
+```
+
+Estas propriedades pertencem ao `ApiResponse<T>`.
+
+### Dados do recurso
+
+O recurso retornado encontra-se dentro de `Data`.
+
+```csharp
+response.Data?.Id
+response.Data?.Amount
+response.Data?.Reference
+response.Data?.Status
+```
+
+Por exemplo:
+
+```csharp
+var response = await client.Payments.GetAsync(paymentId);
+
+Console.WriteLine($"Success : {response.Success}");
+Console.WriteLine($"Message : {response.Message}");
+Console.WriteLine($"Status  : {response.Status}");
+
+Console.WriteLine($"Id        : {response.Data?.Id}");
+Console.WriteLine($"Amount    : {response.Data?.Amount} MZN");
+Console.WriteLine($"Reference : {response.Data?.Reference}");
+Console.WriteLine($"PayStatus : {response.Data?.Status}");
+```
+
+### Guardar o `Data` numa variável
+
+Também é possível extrair o recurso:
+
+```csharp
+var response = await client.Payments.GetAsync(paymentId);
+
+var payment = response.Data;
+```
+
+A partir desse momento:
+
+```csharp
+payment?.Id
+payment?.Amount
+payment?.Reference
+payment?.Status
+```
+
+Neste caso já não precisamos de utilizar `Data`, porque `payment` é o objeto `Payment`.
+
+A regra é simples:
+
+```text
+response.X
+    ↓
+propriedade do ApiResponse<T>
+
+response.Data?.X
+    ↓
+propriedade do recurso T
+```
+
+---
+
+# 💳 Payments
+
+O recurso `Payments` permite criar, consultar e listar pedidos de pagamento.
+
+```csharp
+client.Payments
+```
+
+---
+
+## Criar Payment
+
+Endpoint:
+
+```text
+POST /api/v1/payments
+```
+
+Request:
+
+```csharp
+var request = new CreatePaymentRequest
 {
-    Amount    = 500m,                 // 1 a 1.000.000 MZN
-    Reference = "PO123ABC456",        // alfanumérica, máx. 30
-    Method    = PayoutMethods.MPesa,
-    Beneficiary = new Beneficiary
+    Amount = 100.50m,
+    Method = "mpesa",
+    Reference = "INV123456",
+    Description = "Pagamento da fatura",
+    ReturnUrl = "https://example.com/success",
+    WebhookUrl = "https://example.com/webhooks/paysuite",
+    ContactId = "01H8X9V8X9Y8Z9A8B8C8D8E8F8"
+};
+
+var response = await client.Payments.CreateAsync(request);
+```
+
+### JSON Body
+
+A requisição será equivalente a:
+
+```json
+{
+  "amount": 100.5,
+  "method": "mpesa",
+  "reference": "INV123456",
+  "description": "Pagamento da fatura",
+  "return_url": "https://example.com/success",
+  "webhook_url": "https://example.com/webhooks/paysuite",
+  "contact_id": "01H8X9V8X9Y8Z9A8B8C8D8E8F8"
+}
+```
+
+### Campos
+
+| Campo         | Tipo    | Obrigatório | Descrição                              |
+| ------------- | ------- | ----------: | -------------------------------------- |
+| `amount`      | decimal |         Sim | Valor em MZN. Entre 10 e 1.000.000     |
+| `method`      | string  |         Não | `credit_card`, `mpesa` ou `emola`      |
+| `reference`   | string  |         Sim | Referência única, máximo 50 caracteres |
+| `description` | string  |         Não | Máximo 125 caracteres                  |
+| `return_url`  | string  |         Não | URL para retorno após o pagamento      |
+| `webhook_url` | string  |         Não | URL de webhook                         |
+| `contact_id`  | string  |         Não | ULID de um contacto                    |
+
+Se `webhook_url` não for informado, será utilizado o webhook configurado para a conta, quando aplicável.
+
+---
+
+## Exemplo completo
+
+```csharp
+var response = await client.Payments.CreateAsync(
+    new CreatePaymentRequest
     {
-        Phone  = "841234567",         // 9 dígitos, sem +258
-        Holder = "João Silva"
-    },
-    Description = "Levantamento"      // opcional, máx. 255
-});
-```
-
-### Para conta bancária
-
-```csharp
-var payout = await client.Payouts.CreateAsync(new CreatePayoutRequest
-{
-    Amount    = 2000m,
-    Reference = "PO987XYZ654",
-    Method    = PayoutMethods.Bank,   // ou PayoutMethods.BankTransfer
-    Beneficiary = new Beneficiary
-    {
-        Nib    = "000000000000000000000",  // 21 dígitos
-        Holder = "João Silva"
+        Amount = 100.50m,
+        Method = "mpesa",
+        Reference = "INV123456",
+        Description = "Pagamento da fatura",
+        ReturnUrl = "https://example.com/success",
+        WebhookUrl = "https://example.com/webhooks/paysuite",
+        ContactId = "01H8X9V8X9Y8Z9A8B8C8D8E8F8"
     }
-});
+);
+
+Console.WriteLine($"Success : {response.Success}");
+Console.WriteLine($"Message : {response.Message}");
+Console.WriteLine($"Status  : {response.Status}");
+
+var payment = response.Data;
+
+Console.WriteLine($"Id        : {payment?.Id}");
+Console.WriteLine($"Amount    : {payment?.Amount} MZN");
+Console.WriteLine($"Reference : {payment?.Reference}");
+Console.WriteLine($"Status    : {payment?.Status}");
 ```
 
-Métodos em `PayoutMethods`: `MPesa`, `Emola`, `Mkesh`, `Bank`, `BankTransfer`. A moeda é sempre `MZN` (já é o valor por omissão).
+---
 
-**Estados de um payout:** `pending`, `completed`, `failed`, `cancelled`.
+## Consultar Payment
 
-## Reembolsos
+Endpoint:
 
-Só é possível reembolsar pagamentos já concluídos, até ao valor ainda disponível.
+```text
+GET /api/v1/payments/{id}
+```
 
 ```csharp
-var refund = await client.Refunds.CreateAsync(new CreateRefundRequest
+var response = await client.Payments.GetAsync(
+    "01m487646hbykkwxzvknchfp0w"
+);
+```
+
+Exemplo:
+
+```csharp
+Console.WriteLine($"Response Status : {response.Status}");
+
+var payment = response.Data;
+
+Console.WriteLine($"Payment Id      : {payment?.Id}");
+Console.WriteLine($"Amount          : {payment?.Amount} MZN");
+Console.WriteLine($"Reference       : {payment?.Reference}");
+Console.WriteLine($"Payment Status  : {payment?.Status}");
+```
+
+---
+
+## Listar Payments
+
+Endpoint:
+
+```text
+GET /api/v1/payments
+```
+
+```csharp
+var response = await client.Payments.ListAsync(
+    page: 1,
+    limit: 20
+);
+```
+
+Os dados da paginação encontram-se em:
+
+```csharp
+var page = response.Data;
+```
+
+Exemplo:
+
+```csharp
+if (page?.Items is not null)
+{
+    foreach (var payment in page.Items)
+    {
+        Console.WriteLine(
+            $"{payment.Id} - {payment.Amount} MZN - {payment.Status}"
+        );
+    }
+}
+```
+
+---
+
+# 💸 Payouts
+
+O recurso `Payouts` permite criar, consultar e listar payouts.
+
+```csharp
+client.Payouts
+```
+
+---
+
+## Criar Payout
+
+Endpoint:
+
+```text
+POST /api/v1/payouts
+```
+
+Um payout pode utilizar um método mobile ou bancário.
+
+Métodos mobile:
+
+```text
+mpesa
+emola
+mkesh
+```
+
+Métodos bancários:
+
+```text
+bank
+bank_transfer
+```
+
+### Payout Mobile
+
+```csharp
+var request = new CreatePayoutRequest
+{
+    Amount = 100m,
+    Currency = "MZN",
+    Method = "mpesa",
+    Reference = "PO123456",
+    Description = "Pagamento ao beneficiário",
+    Beneficiary = new PayoutBeneficiary
+    {
+        Phone = "841234567",
+        Holder = "John Doe"
+    },
+    WebhookUrl = "https://example.com/webhooks/payout"
+};
+
+var response = await client.Payouts.CreateAsync(request);
+```
+
+JSON:
+
+```json
+{
+  "amount": 100,
+  "currency": "MZN",
+  "method": "mpesa",
+  "reference": "PO123456",
+  "description": "Pagamento ao beneficiário",
+  "beneficiary": {
+    "phone": "841234567",
+    "holder": "John Doe"
+  },
+  "webhook_url": "https://example.com/webhooks/payout"
+}
+```
+
+### Payout Bancário
+
+Para `bank` ou `bank_transfer`, utiliza-se o NIB:
+
+```csharp
+var request = new CreatePayoutRequest
+{
+    Amount = 1000m,
+    Currency = "MZN",
+    Method = "bank",
+    Reference = "PO123456",
+    Description = "Transferência bancária",
+    Beneficiary = new PayoutBeneficiary
+    {
+        Nib = "123456789012345678901",
+        Holder = "John Doe"
+    }
+};
+```
+
+JSON:
+
+```json
+{
+  "amount": 1000,
+  "currency": "MZN",
+  "method": "bank",
+  "reference": "PO123456",
+  "description": "Transferência bancária",
+  "beneficiary": {
+    "nib": "123456789012345678901",
+    "holder": "John Doe"
+  }
+}
+```
+
+### Campos
+
+| Campo                | Tipo    | Obrigatório | Descrição                                          |
+| -------------------- | ------- | ----------: | -------------------------------------------------- |
+| `amount`             | decimal |         Sim | 1 – 1.000.000 MZN                                  |
+| `currency`           | string  |         Sim | Atualmente `MZN`                                   |
+| `method`             | string  |         Sim | `mpesa`, `emola`, `mkesh`, `bank`, `bank_transfer` |
+| `reference`          | string  |         Sim | Alfanumérica, máximo 30 caracteres                 |
+| `description`        | string  |         Não | Máximo 255 caracteres                              |
+| `beneficiary.phone`  | string  | Condicional | 9 dígitos para métodos mobile                      |
+| `beneficiary.nib`    | string  | Condicional | 21 dígitos para métodos bancários                  |
+| `beneficiary.holder` | string  |         Sim | Nome do titular                                    |
+| `webhook_url`        | string  |         Não | URL do webhook                                     |
+
+---
+
+## Consultar Payout
+
+```csharp
+var response = await client.Payouts.GetAsync(
+    "01H8X9V8X9Y8Z9A8B8C8D8E8F8"
+);
+
+var payout = response.Data;
+
+Console.WriteLine($"Id      : {payout?.Id}");
+Console.WriteLine($"Amount  : {payout?.Amount} MZN");
+Console.WriteLine($"Status  : {payout?.Status}");
+```
+
+---
+
+## Listar Payouts
+
+```csharp
+var response = await client.Payouts.ListAsync(
+    page: 1,
+    limit: 15
+);
+
+var page = response.Data;
+
+if (page?.Items is not null)
+{
+    foreach (var payout in page.Items)
+    {
+        Console.WriteLine(
+            $"{payout.Id} - {payout.Amount} MZN - {payout.Status}"
+        );
+    }
+}
+```
+
+---
+
+# 🔄 Refunds
+
+O recurso `Refunds` permite criar, consultar e listar reembolsos.
+
+```csharp
+client.Refunds
+```
+
+---
+
+## Criar Refund
+
+Endpoint:
+
+```text
+POST /api/v1/refunds
+```
+
+```csharp
+var request = new CreateRefundRequest
 {
     PaymentId = "01H8X9V8X9Y8Z9A8B8C8D8E8F8",
-    Amount    = 50m,                      // 0,01 a 10.000.000
-    Reason    = "Cliente pediu reembolso" // máx. 500
-});
+    Amount = 50m,
+    Reason = "Customer requested refund",
+    WebhookUrl = "https://example.com/webhooks/refund"
+};
+
+var response = await client.Refunds.CreateAsync(request);
 ```
 
-**Estados de um reembolso:** `pending`, `processing`, `completed`, `failed`, `cancelled`.
+JSON:
 
-## Contactos
+```json
+{
+  "payment_id": "01H8X9V8X9Y8Z9A8B8C8D8E8F8",
+  "amount": 50,
+  "reason": "Customer requested refund",
+  "webhook_url": "https://example.com/webhooks/refund"
+}
+```
+
+### Campos
+
+| Campo         | Tipo    | Obrigatório | Descrição                     |
+| ------------- | ------- | ----------: | ----------------------------- |
+| `payment_id`  | string  |         Sim | ULID do pagamento             |
+| `amount`      | decimal |         Sim | Valor do reembolso            |
+| `reason`      | string  |         Sim | Motivo, máximo 500 caracteres |
+| `webhook_url` | string  |         Não | URL do webhook                |
+
+O refund pode ser total ou parcial, dependendo do valor informado e das regras da API.
+
+---
+
+## Consultar Refund
 
 ```csharp
-var contact = await client.Contacts.CreateAsync(new CreateContactRequest
-{
-    Name  = "João Silva",
-    Phone = "+258841234567"   // formato E.164; indica email ou telefone (pelo menos um)
-});
+var response = await client.Refunds.GetAsync(
+    "01H8X9V8X9Y8Z9A8B8C8D8E8F8"
+);
 
-await client.Contacts.UpdateAsync(contact.Id, new UpdateContactRequest { Email = "joao@exemplo.com" });
+var refund = response.Data;
 
-var contacts = await client.Contacts.ListAsync(email: "joao@exemplo.com");
-
-await client.Contacts.DeleteAsync(contact.Id);
+Console.WriteLine($"Id     : {refund?.Id}");
+Console.WriteLine($"Amount : {refund?.Amount} MZN");
+Console.WriteLine($"Status : {refund?.Status}");
 ```
 
-Não é possível apagar um contacto que tenha pagamentos associados. Para ligar um pagamento a um contacto, passa o `ContactId` ao criar o pagamento.
+---
 
-## Webhooks
-
-A PaySuite avisa a tua aplicação quando algo muda. Os eventos são:
-
-| Evento | Quando |
-|---|---|
-| `payment.success` / `payment.failed` | pagamento concluído ou falhado |
-| `payout.success` / `payout.failed` | payout concluído ou falhado |
-| `refund.success` / `refund.failed` | reembolso concluído ou falhado |
-
-Cada pedido traz o header `X-Signature`, o HMAC-SHA256 (em hexadecimal) do corpo bruto, calculado com o teu *webhook secret*. **Verifica sempre a assinatura** antes de confiar no conteúdo. Exemplo em ASP.NET Core:
+## Listar Refunds
 
 ```csharp
-app.MapPost("/webhooks/paysuite", async (HttpRequest http) =>
+var response = await client.Refunds.ListAsync(
+    page: 1,
+    limit: 20
+);
+
+var page = response.Data;
+
+if (page?.Items is not null)
 {
-    using var reader = new StreamReader(http.Body);
-    var payload = await reader.ReadToEndAsync();
-
-    var secret = Environment.GetEnvironmentVariable("PAYSUITE_WEBHOOK_SECRET")!;
-    var received = http.Headers["X-Signature"].ToString();
-
-    using var hmac = new System.Security.Cryptography.HMACSHA256(
-        System.Text.Encoding.UTF8.GetBytes(secret));
-    var expected = Convert.ToHexString(
-        hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(payload))).ToLowerInvariant();
-
-    var valid = System.Security.Cryptography.CryptographicOperations.FixedTimeEquals(
-        System.Text.Encoding.UTF8.GetBytes(expected),
-        System.Text.Encoding.UTF8.GetBytes(received));
-
-    if (!valid) return Results.Unauthorized();
-
-    // processa o evento (payment.success, payout.failed, ...)
-    return Results.Ok();
-});
+    foreach (var refund in page.Items)
+    {
+        Console.WriteLine(
+            $"{refund.Id} - {refund.Amount} MZN - {refund.Status}"
+        );
+    }
+}
 ```
 
-Boas práticas recomendadas pela PaySuite:
+---
 
-- Responde em menos de 5 segundos e processa o trabalho pesado depois.
-- Usa o `id` do evento mais o estado como chave de idempotência, porque o mesmo evento pode chegar mais de uma vez.
-- Há até 5 tentativas com espera crescente se a tua resposta falhar.
+# 👤 Contacts
 
-## Tratamento de erros
+O recurso `Contacts` permite criar, consultar, atualizar, eliminar e listar contactos.
 
-O SDK valida os dados antes de enviar o pedido. Se algo estiver errado, lança `PaySuiteValidationException` sem gastar uma chamada à API:
+```csharp
+client.Contacts
+```
+
+---
+
+## Criar Contact
+
+Endpoint:
+
+```text
+POST /api/v1/contacts
+```
+
+Um contacto deve possuir **email ou telefone**.
+
+```csharp
+var request = new CreateContactRequest
+{
+    Name = "João Silva",
+    Email = "joao@example.com",
+    Phone = "+258841234567"
+};
+
+var response = await client.Contacts.CreateAsync(request);
+```
+
+JSON:
+
+```json
+{
+  "name": "João Silva",
+  "email": "joao@example.com",
+  "phone": "+258841234567"
+}
+```
+
+Também é possível criar apenas com email:
+
+```json
+{
+  "name": "João Silva",
+  "email": "joao@example.com"
+}
+```
+
+Ou apenas com telefone:
+
+```json
+{
+  "name": "João Silva",
+  "phone": "+258841234567"
+}
+```
+
+### Campos
+
+| Campo   | Tipo   | Obrigatório | Descrição                 |
+| ------- | ------ | ----------: | ------------------------- |
+| `name`  | string |         Sim | Nome do contacto          |
+| `email` | string | Condicional | Email do contacto         |
+| `phone` | string | Condicional | Telefone em formato E.164 |
+
+> É obrigatório fornecer pelo menos `email` ou `phone`.
+
+---
+
+## Consultar Contact
+
+```csharp
+var response = await client.Contacts.GetAsync(
+    "01H8X9V8X9Y8Z9A8B8C8D8E8F8"
+);
+
+var contact = response.Data;
+
+Console.WriteLine($"Id    : {contact?.Id}");
+Console.WriteLine($"Name  : {contact?.Name}");
+Console.WriteLine($"Email : {contact?.Email}");
+Console.WriteLine($"Phone : {contact?.Phone}");
+```
+
+---
+
+## Atualizar Contact
+
+Endpoint:
+
+```text
+PATCH /api/v1/contacts/{id}
+```
+
+O update utiliza apenas os campos que precisam de ser alterados.
+
+```csharp
+var response = await client.Contacts.UpdateAsync(
+    contactId,
+    new UpdateContactRequest
+    {
+        Name = "João Silva Atualizado",
+        Email = "novo@example.com"
+    }
+);
+```
+
+JSON:
+
+```json
+{
+  "name": "João Silva Atualizado",
+  "email": "novo@example.com"
+}
+```
+
+Por exemplo, para alterar apenas o telefone:
+
+```csharp
+var response = await client.Contacts.UpdateAsync(
+    contactId,
+    new UpdateContactRequest
+    {
+        Phone = "+258841234568"
+    }
+);
+```
+
+JSON:
+
+```json
+{
+  "phone": "+258841234568"
+}
+```
+
+---
+
+## Eliminar Contact
+
+Endpoint:
+
+```text
+DELETE /api/v1/contacts/{id}
+```
+
+```csharp
+var response = await client.Contacts.DeleteAsync(
+    contactId
+);
+
+Console.WriteLine($"Success : {response.Success}");
+Console.WriteLine($"Message : {response.Message}");
+```
+
+Um contacto associado a pagamentos pode não poder ser eliminado.
+
+---
+
+## Listar Contacts
+
+Endpoint:
+
+```text
+GET /api/v1/contacts
+```
+
+```csharp
+var response = await client.Contacts.ListAsync(
+    page: 1,
+    limit: 20
+);
+```
+
+É possível filtrar por email:
+
+```csharp
+var response = await client.Contacts.ListAsync(
+    page: 1,
+    limit: 20,
+    email: "joao@example.com"
+);
+```
+
+Os dados encontram-se em:
+
+```csharp
+var page = response.Data;
+```
+
+---
+
+# 🌐 Webhooks
+
+Os recursos que suportam webhook aceitam:
+
+```json
+{
+  "webhook_url": "https://example.com/webhooks/paysuite"
+}
+```
+
+O campo é opcional.
+
+Quando não é informado, a API pode utilizar o webhook configurado para a conta.
+
+Exemplo:
+
+```csharp
+var response = await client.Payments.CreateAsync(
+    new CreatePaymentRequest
+    {
+        Amount = 100m,
+        Method = "mpesa",
+        Reference = "INV123",
+        WebhookUrl = "https://example.com/webhooks/paysuite"
+    }
+);
+```
+
+---
+
+# 🔐 Validação de Webhooks
+
+Caso a API forneça uma assinatura para validação do webhook, a aplicação deve validar a assinatura antes de processar os dados recebidos.
+
+Exemplo genérico utilizando HMAC SHA-256:
+
+```csharp
+using System.Security.Cryptography;
+using System.Text;
+
+public static bool VerifySignature(
+    string payload,
+    string signature,
+    string secret)
+{
+    using var hmac = new HMACSHA256(
+        Encoding.UTF8.GetBytes(secret)
+    );
+
+    var hash = hmac.ComputeHash(
+        Encoding.UTF8.GetBytes(payload)
+    );
+
+    var expectedSignature =
+        Convert.ToHexString(hash).ToLowerInvariant();
+
+    return CryptographicOperations.FixedTimeEquals(
+        Encoding.UTF8.GetBytes(expectedSignature),
+        Encoding.UTF8.GetBytes(signature)
+    );
+}
+```
+
+A implementação final deve seguir o mecanismo de assinatura definido pela documentação oficial da PaySuite.
+
+---
+
+# ⚠️ Tratamento de erros
+
+O SDK realiza validações locais antes de enviar algumas requisições.
+
+Exemplo:
 
 ```csharp
 try
 {
-    await client.Payouts.CreateAsync(request);
+    var response = await client.Payments.CreateAsync(
+        new CreatePaymentRequest
+        {
+            Amount = 100m,
+            Method = "mpesa",
+            Reference = "INV123"
+        }
+    );
+
+    Console.WriteLine(response.Message);
 }
 catch (PaySuiteValidationException ex)
 {
-    // erro nos teus dados (ex.: telefone sem 9 dígitos)
+    Console.WriteLine("Erro de validação:");
     Console.WriteLine(ex.Message);
 }
-<!-- VERIFICAR: nome(s) da(s) excepção(ões) para erros devolvidos pela API -->
 catch (PaySuiteException ex)
 {
-    // erro devolvido pela API (token inválido, saldo insuficiente, ...)
+    Console.WriteLine("Erro da PaySuite:");
+    Console.WriteLine(ex.Message);
+}
+catch (Exception ex)
+{
+    Console.WriteLine("Erro inesperado:");
     Console.WriteLine(ex.Message);
 }
 ```
 
-Códigos HTTP que a API pode devolver:
+---
 
-| Código | Significado |
-|---|---|
-| 400 | Dados inválidos |
-| 401 | Token inválido |
-| 402 | Pagamento falhou |
-| 404 | Recurso não encontrado |
-| 422 | Erro de validação (inclui "saldo insuficiente" em payouts) |
-| 429 | Demasiados pedidos |
+# 🛡️ Validações locais
 
-Limite da API: **100 pedidos por minuto** por conta.
+## Payments
 
-## Regras validadas pelo SDK
+O SDK valida, entre outras regras:
 
-| Campo | Regra |
-|---|---|
-| Payment `Amount` | 10 a 1.000.000 MZN <!-- VERIFICAR: mínimo de 10 não consta na doc --> |
-| Payment Reference | Obrigatória, com no máximo 50 caracteres, contendo apenas letras e dígitos |
-| Payment `Description` | máx. 125 caracteres |
-| Payout `Amount` | 1 a 1.000.000 MZN |
-| Payout `Reference` | obrigatória, alfanumérica, máx. 30 caracteres |
-| Payout `Description` | máx. 255 caracteres |
-| Payout `Currency` | apenas `MZN` |
-| Beneficiário móvel | `Phone` com 9 dígitos e `Holder` |
-| Beneficiário bancário | `Nib` com 21 dígitos e `Holder` |
-| Refund `Amount` | 0,01 a 10.000.000 |
-| Refund `Reason` | obrigatória, máx. 500 caracteres |
-| Listagens (`limit`) | 1 a 100 (payments, refunds, contacts) |
-| URLs (`ReturnUrl`, `WebhookUrl`) | opcionais; se enviadas, têm de ser URLs válidas |
+* `amount` entre `10` e `1.000.000`
+* `reference` obrigatória
+* `reference` máximo de 50 caracteres
+* `description` máximo de 125 caracteres
+* `return_url` válida quando fornecida
+* `webhook_url` válida quando fornecida
 
-A API é a autoridade final: se as regras dela mudarem, o SDK pode ficar desactualizado. Se encontrares uma diferença, abre uma issue.
+Métodos suportados:
 
-## Boas práticas
+```text
+credit_card
+mpesa
+emola
+```
 
-- Testa tudo no ambiente de testes antes de ires para produção.
-- Usa uma `Reference` única por operação. É o que te protege de duplicados.
-- Guarda o `Id` devolvido pela PaySuite junto do teu pedido, para poderes consultar o estado depois.
-- Não dependas só do retorno do cliente (`ReturnUrl`): confirma o estado com o webhook ou com `GetAsync`.
-- Mantém o token e o webhook secret fora do código e do repositório.
+---
 
-## Contribuir
+## Payouts
 
-Issues e pull requests são bem-vindos em [github.com/LazaroMagaia/paysuite-dotnet-sdk](https://github.com/LazaroMagaia/paysuite-dotnet-sdk).
+O SDK valida:
 
-## Licença
+* `amount` entre `1` e `1.000.000`
+* `currency = MZN`
+* `reference` obrigatória
+* `reference` alfanumérica
+* `reference` máximo de 30 caracteres
+* `description` máximo de 255 caracteres
+* método suportado
+* telefone mobile com 9 dígitos
+* NIB bancário com 21 dígitos
+* `holder` obrigatório
+* `webhook_url` válida quando fornecida
 
-<!-- VERIFICAR: escolher a licença (ex.: MIT) e adicionar o ficheiro LICENSE -->
+---
+
+## Refunds
+
+São validados:
+
+* `payment_id` obrigatório
+* `amount` válido
+* `reason` obrigatório
+* `reason` máximo de 500 caracteres
+* `webhook_url` válida quando fornecida
+
+---
+
+# 🧩 HttpClient personalizado
+
+É possível utilizar uma instância própria de `HttpClient`.
+
+```csharp
+using var httpClient = new HttpClient();
+
+PaySuiteClient.Configure(
+    httpClient,
+    new PaySuiteOptions
+    {
+        Token = "seu-token"
+    }
+);
+
+using var client = new PaySuiteClient(httpClient);
+```
+
+Isto permite integrar o SDK com configurações próprias de `HttpClient`, handlers, proxies ou `HttpClientFactory`.
+
+---
+
+# ⚙️ PaySuiteOptions
+
+Exemplo:
+
+```csharp
+var options = new PaySuiteOptions
+{
+    Token = token,
+    BaseUrl = new Uri("https://paysuite.tech/api/v1/"),
+    Timeout = TimeSpan.FromSeconds(30)
+};
+
+using var client = new PaySuiteClient(
+    token,
+    options
+);
+```
+
+---
+
+# 🧪 Teste rápido
+
+Para testar o SDK rapidamente através de uma aplicação Console:
+
+```bash
+dotnet new console -n PaySuite.Test
+cd PaySuite.Test
+```
+
+Adicionar referência ao SDK local:
+
+```bash
+dotnet add reference \
+    ../PaySuite.Sdk/src/PaySuite.Sdk/PaySuite.Sdk.csproj
+```
+
+Configurar o token:
+
+```bash
+export PAYSUITE_TOKEN="seu-token"
+```
+
+No `Program.cs`:
+
+```csharp
+using PaySuite.Sdk;
+
+var token = Environment.GetEnvironmentVariable("PAYSUITE_TOKEN");
+
+if (string.IsNullOrWhiteSpace(token))
+{
+    Console.WriteLine("PAYSUITE_TOKEN não configurado.");
+    return;
+}
+
+using var client = new PaySuiteClient(token);
+
+var fetchedPayment =
+    await client.Payments.GetAsync(
+        "01m487646hbykkwxzvknchfp0w"
+    );
+
+Console.WriteLine();
+Console.WriteLine("Pagamento consultado:");
+
+Console.WriteLine(
+    $"  Success   : {fetchedPayment.Success}"
+);
+
+Console.WriteLine(
+    $"  Message   : {fetchedPayment.Message}"
+);
+
+Console.WriteLine(
+    $"  Status    : {fetchedPayment.Status}"
+);
+
+Console.WriteLine(
+    $"  Id        : {fetchedPayment.Data?.Id}"
+);
+
+Console.WriteLine(
+    $"  Amount    : {fetchedPayment.Data?.Amount} MZN"
+);
+
+Console.WriteLine(
+    $"  Reference : {fetchedPayment.Data?.Reference}"
+);
+
+Console.WriteLine(
+    $"  PayStatus : {fetchedPayment.Data?.Status}"
+);
+```
+
+Executar:
+
+```bash
+dotnet run
+```
+
+---
+
+# 🔧 Desenvolvimento local
+
+Durante o desenvolvimento, é possível referenciar diretamente o projeto do SDK:
+
+```bash
+dotnet add reference \
+    ../PaySuite.Sdk/src/PaySuite.Sdk/PaySuite.Sdk.csproj
+```
+
+Isto permite testar alterações imediatamente sem precisar criar e instalar um novo pacote NuGet.
+
+---
+
+# 📁 Estrutura do projeto
+
+```text
+PaySuite.Sdk/
+├── compose.yaml
+├── Dockerfile
+├── .dockerignore
+├── .gitignore
+├── PaySuite.Sdk.slnx
+├── README.md
+│
+├── src/
+│   └── PaySuite.Sdk/
+│       ├── PaySuite.Sdk.csproj
+│       │
+│       ├── Internal/
+│       │   ├── ApiClient.cs
+│       │   └── Guard.cs
+│       │
+│       ├── Models/
+│       │   ├── Payment.cs
+│       │   ├── Payout.cs
+│       │   ├── Refund.cs
+│       │   ├── Contact.cs
+│       │   └── ...
+│       │
+│       ├── Resources/
+│       │   ├── PaymentsResource.cs
+│       │   ├── PayoutsResource.cs
+│       │   ├── RefundsResource.cs
+│       │   └── ContactsResource.cs
+│       │
+│       ├── PaySuiteClient.cs
+│       ├── PaySuiteOptions.cs
+│       └── ...
+│
+└── tests/
+    └── PaySuite.Sdk.Tests/
+        └── PaySuite.Sdk.Tests.csproj
+```
+
+---
+
+# 🏗️ Arquitetura
+
+A arquitetura do SDK segue aproximadamente:
+
+```text
+Aplicação
+    │
+    ▼
+PaySuiteClient
+    │
+    ├── PaymentsResource
+    ├── PayoutsResource
+    ├── RefundsResource
+    └── ContactsResource
+            │
+            ▼
+        ApiClient
+            │
+            ▼
+        HttpClient
+            │
+            ▼
+       PaySuite API
+```
+
+O `PaySuiteClient` é o ponto de entrada principal:
+
+```csharp
+using var client = new PaySuiteClient(token);
+```
+
+Os Resources ficam disponíveis através do cliente:
+
+```csharp
+client.Payments
+client.Payouts
+client.Refunds
+client.Contacts
+```
+
+---
+
+# 📡 ApiClient
+
+O `ApiClient` é responsável pela comunicação HTTP com a API.
+
+Os Resources não precisam trabalhar diretamente com `HttpClient`.
+
+Por exemplo:
+
+```csharp
+return _api.GetDataAsync<Payment>(
+    HttpMethod.Get,
+    $"payments/{id}",
+    ct: ct
+);
+```
+
+O resultado é:
+
+```csharp
+ApiResponse<Payment>
+```
+
+Isso mantém separadas as responsabilidades:
+
+```text
+Resource
+   ↓
+ApiClient
+   ↓
+HttpClient
+   ↓
+API
+```
+
+---
+
+# 📦 Resources
+
+Os Resources fornecem uma API orientada ao domínio.
+
+Em vez de:
+
+```csharp
+httpClient.GetAsync(
+    $"payments/{id}"
+);
+```
+
+o consumidor utiliza:
+
+```csharp
+await client.Payments.GetAsync(id);
+```
+
+Da mesma forma:
+
+```csharp
+await client.Payments.CreateAsync(request);
+
+await client.Payouts.CreateAsync(request);
+
+await client.Refunds.CreateAsync(request);
+
+await client.Contacts.CreateAsync(request);
+```
+
+---
+
+# 🧪 Testes
+
+Executar os testes:
+
+```bash
+dotnet test
+```
+
+Com mais detalhes:
+
+```bash
+dotnet test --verbosity normal
+```
+
+---
+
+# 📦 Build
+
+Build normal:
+
+```bash
+dotnet build
+```
+
+Build de Release:
+
+```bash
+dotnet build -c Release
+```
+
+---
+
+# 📦 Criar pacote NuGet
+
+Limpar:
+
+```bash
+dotnet clean
+```
+
+Criar o pacote:
+
+```bash
+dotnet pack -c Release
+```
+
+O pacote será criado em:
+
+```text
+bin/Release/
+```
+
+---
+
+# 🚀 Publicar no NuGet
+
+Depois de testar o pacote:
+
+```bash
+dotnet nuget push \
+    bin/Release/PaySuite.Sdk.1.0.0.nupkg \
+    --api-key SEU_API_KEY \
+    --source https://api.nuget.org/v3/index.json
+```
+
+Nunca coloque uma API key diretamente no código ou no repositório.
+
+---
+
+# 🔢 Versionamento
+
+Atualize a versão no `PaySuite.Sdk.csproj`:
+
+```xml
+<PropertyGroup>
+    <Version>1.0.1</Version>
+</PropertyGroup>
+```
+
+Depois:
+
+```bash
+dotnet clean
+dotnet pack -c Release
+```
+
+---
+
+# 🔒 Segurança
+
+Nunca coloque tokens diretamente no código:
+
+```csharp
+// ❌ Evitar
+var token = "seu-token";
+```
+
+Prefira:
+
+```csharp
+var token = Environment.GetEnvironmentVariable(
+    "PAYSUITE_TOKEN"
+);
+```
+
+Nunca faça commit de:
+
+* tokens;
+* API keys;
+* credenciais;
+* secrets;
+* tokens de produção.
+
+---
+
+# 🗺️ Roadmap
+
+* [ ] Melhor cobertura de testes
+* [ ] Testes de integração
+* [ ] Suporte completo a `HttpClientFactory`
+* [ ] Melhor tratamento de erros HTTP
+* [ ] Documentação XML / IntelliSense
+* [ ] Exemplos ASP.NET Core
+* [ ] Exemplos de integração
+* [ ] Melhor cobertura de webhooks
+* [ ] CI/CD
+* [ ] Publicação automatizada no NuGet
+* [ ] Suporte a novas funcionalidades da API PaySuite
+
+---
+
+# 🤝 Contribuição
+
+Clone o projeto:
+
+```bash
+git clone https://github.com/LazaroMagaia/paysuite-dotnet-sdk.git
+```
+
+Entre no diretório:
+
+```bash
+cd paysuite-dotnet-sdk
+```
+
+Restaure as dependências:
+
+```bash
+dotnet restore
+```
+
+Execute os testes:
+
+```bash
+dotnet test
+```
+
+Crie uma branch:
+
+```bash
+git checkout -b feature/minha-feature
+```
+
+Depois:
+
+```bash
+git add .
+git commit -m "feat: adiciona nova funcionalidade"
+git push origin feature/minha-feature
+```
+
+---
+
+# 📄 Licença
+
+Consulte o ficheiro `LICENSE` para obter os termos completos da licença.
+
+---
+
+# ⚠️ Disclaimer
+
+Este projeto é um SDK desenvolvido pela comunidade e não possui vínculo oficial com a PaySuite.
+
+A PaySuite e os seus respetivos produtos, serviços, serviços financeiros e marcas pertencem aos seus respetivos proprietários.
+
+Para informações oficiais sobre endpoints, autenticação, parâmetros, webhooks, limites e comportamento da API, consulte:
+
+https://paysuite.tech/docs
+
+---
+
+# 👨‍💻 Autor
+
+Desenvolvido por **Lázaro Magaia**.
+
+GitHub:
+
+https://github.com/LazaroMagaia/paysuite-dotnet-sdk
