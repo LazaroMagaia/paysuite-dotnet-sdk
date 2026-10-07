@@ -1,5 +1,8 @@
 namespace PaySuite.Sdk.Models;
 
+/// <summary>
+/// Métodos de pagamento disponíveis.
+/// </summary>
 public static class PaymentMethods
 {
     public const string CreditCard = "credit_card";

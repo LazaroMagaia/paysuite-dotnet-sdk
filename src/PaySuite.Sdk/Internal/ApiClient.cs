@@ -63,11 +63,26 @@ internal sealed class ApiClient
     }
 
     /// <summary>Chama a API e devolve só o campo "data".</summary>
-    public async Task<T> GetDataAsync<T>(HttpMethod method, string path,
-        object? body = null, CancellationToken ct = default)
+    public async Task<ApiResponse<T>> GetDataAsync<T>(
+        HttpMethod method,
+        string path,
+        object? body = null,
+        CancellationToken ct = default)
     {
-        var r = await SendAsync<ApiResponse<T>>(method, path, body, ct).ConfigureAwait(false);
-        return r.Data ?? throw new PaySuiteException("A resposta não contém 'data'.");
+        var response = await SendAsync<ApiResponse<T>>(
+            method,
+            path,
+            body,
+            ct
+        ).ConfigureAwait(false);
+
+        if (response.Data is null)
+        {
+            throw new PaySuiteException(
+                "A resposta não contém 'data'.");
+        }
+
+        return response;
     }
 
     private static string? ExtractMessage(string raw)
