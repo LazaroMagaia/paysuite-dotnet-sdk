@@ -13,7 +13,7 @@
     <PackageTags>paysuite;mpesa;emola;mozambique;payments</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <RepositoryUrl>https://github.com/TEU-USER/paysuite-dotnet-sdk</RepositoryUrl>
+    <RepositoryUrl>https://github.com/LazaroMagaia/paysuite-dotnet-sdk</RepositoryUrl>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
