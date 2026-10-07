@@ -1,24 +1,39 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);CS1591</NoWarn>
 
+    <!-- Identidade do pacote -->
     <PackageId>PaySuite.Sdk</PackageId>
-    <Version>1.0.0</Version>
-    <Authors>O Teu Nome</Authors>
-    <Description>SDK .NET não oficial para a API PaySuite (M-Pesa, e-Mola, cartões).</Description>
-    <PackageTags>paysuite;mpesa;emola;mozambique;payments</PackageTags>
+    <Version>0.1.0-preview.1</Version>
+    <Authors>Lazaro Magaia</Authors>
+    <Description>SDK .NET não oficial (comunitário) para a API PaySuite: pagamentos (M-Pesa, e-Mola, Mkesh, cartões), payouts, reembolsos e contactos.</Description>
+    <PackageTags>paysuite;mpesa;emola;mkesh;mozambique;payments;sdk</PackageTags>
+
+    <!-- Licença, README e links -->
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageProjectUrl>https://github.com/LazaroMagaia/paysuite-dotnet-sdk</PackageProjectUrl>
     <RepositoryUrl>https://github.com/LazaroMagaia/paysuite-dotnet-sdk</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+
+    <!-- Símbolos para debug -->
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
+
+  <!-- Build reprodutível quando corre no GitHub Actions -->
+  <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+  </PropertyGroup>
+
   <ItemGroup>
     <None Include="../../README.md" Pack="true" PackagePath="\" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.1" />
   </ItemGroup>
+
 </Project>
