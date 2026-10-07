@@ -140,7 +140,6 @@ ApiResponse<Payment>
 ### Dados da resposta
 
 ```csharp
-response.Success
 response.Message
 response.Status
 ```
@@ -163,7 +162,6 @@ Por exemplo:
 ```csharp
 var response = await client.Payments.GetAsync(paymentId);
 
-Console.WriteLine($"Success : {response.Success}");
 Console.WriteLine($"Message : {response.Message}");
 Console.WriteLine($"Status  : {response.Status}");
 
@@ -291,7 +289,6 @@ var response = await client.Payments.CreateAsync(
     }
 );
 
-Console.WriteLine($"Success : {response.Success}");
 Console.WriteLine($"Message : {response.Message}");
 Console.WriteLine($"Status  : {response.Status}");
 
@@ -352,7 +349,7 @@ var response = await client.Payments.ListAsync(
 Os dados da paginação encontram-se em:
 
 ```csharp
-var page = response.Data;
+var page = response.links;
 ```
 
 Exemplo:
@@ -781,7 +778,6 @@ var response = await client.Contacts.DeleteAsync(
     contactId
 );
 
-Console.WriteLine($"Success : {response.Success}");
 Console.WriteLine($"Message : {response.Message}");
 ```
 
