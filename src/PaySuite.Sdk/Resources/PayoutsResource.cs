@@ -7,27 +7,23 @@ public sealed class PayoutsResource
 {
     private readonly ApiClient _api;
 
-    internal PayoutsResource(ApiClient api) => _api = api;
+    internal PayoutsResource(ApiClient api)
+    {
+        _api = api;
+    }
 
-    public Task<Payout> CreateAsync(
+    public Task<ApiResponse<Payout>> CreateAsync(
         CreatePayoutRequest request,
         CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        // -------------------------------------------------------------
-        // Amount
-        // PaySuite: 1 MZN até 1.000.000 MZN
-        // -------------------------------------------------------------
         Guard.Range(
             request.Amount,
             1m,
             1_000_000m,
             nameof(request.Amount));
 
-        // -------------------------------------------------------------
-        // Reference (alfanumérica, máx. 30)
-        // -------------------------------------------------------------
         Guard.NotEmpty(
             request.Reference,
             nameof(request.Reference));
@@ -43,17 +39,11 @@ public sealed class PayoutsResource
                 "Reference deve ser alfanumérica (apenas letras A-Z e dígitos 0-9).");
         }
 
-        // -------------------------------------------------------------
-        // Description (opcional, máx. 255)
-        // -------------------------------------------------------------
         Guard.MaxLength(
             request.Description,
             255,
             nameof(request.Description));
 
-        // -------------------------------------------------------------
-        // Currency
-        // -------------------------------------------------------------
         Guard.NotEmpty(
             request.Currency,
             nameof(request.Currency));
@@ -67,9 +57,6 @@ public sealed class PayoutsResource
                 "A moeda do payout deve ser MZN.");
         }
 
-        // -------------------------------------------------------------
-        // Method
-        // -------------------------------------------------------------
         Guard.NotEmpty(
             request.Method,
             nameof(request.Method));
@@ -82,9 +69,6 @@ public sealed class PayoutsResource
                 $"Método de payout inválido: {request.Method}");
         }
 
-        // -------------------------------------------------------------
-        // Beneficiary
-        // -------------------------------------------------------------
         ArgumentNullException.ThrowIfNull(request.Beneficiary);
 
         var beneficiary = request.Beneficiary with
@@ -96,9 +80,6 @@ public sealed class PayoutsResource
 
         ValidateBeneficiary(method, beneficiary);
 
-        // -------------------------------------------------------------
-        // Webhook (opcional: se omitido, a PaySuite usa o da conta)
-        // -------------------------------------------------------------
         if (!string.IsNullOrWhiteSpace(request.WebhookUrl))
         {
             Guard.Url(
@@ -106,7 +87,6 @@ public sealed class PayoutsResource
                 nameof(request.WebhookUrl));
         }
 
-        // Envia os valores normalizados, não os originais.
         var payload = request with
         {
             Method = method,
@@ -121,13 +101,15 @@ public sealed class PayoutsResource
             ct);
     }
 
-    public Task<Payout> GetAsync(
+    public Task<ApiResponse<Payout>> GetAsync(
         string id,
         CancellationToken ct = default)
-        => _api.GetDataAsync<Payout>(
+    {
+        return _api.GetDataAsync<Payout>(
             HttpMethod.Get,
             $"payouts/{Guard.Id(id)}",
             ct: ct);
+    }
 
     public Task<PagedResponse<Payout>> ListAsync(
         int page = 1,
@@ -140,7 +122,6 @@ public sealed class PayoutsResource
             int.MaxValue,
             nameof(page));
 
-        // A doc não documenta um máximo para payouts; a API responde 422 se exceder.
         Guard.Range(
             limit,
             1,
@@ -185,7 +166,8 @@ public sealed class PayoutsResource
                 "Beneficiary.Phone é obrigatório para payouts móveis.");
         }
 
-        if (beneficiary.Phone.Length != 9 || !beneficiary.Phone.All(IsAsciiDigit))
+        if (beneficiary.Phone.Length != 9 ||
+            !beneficiary.Phone.All(IsAsciiDigit))
         {
             throw new PaySuiteValidationException(
                 "Beneficiary.Phone deve conter 9 dígitos.");
@@ -203,7 +185,8 @@ public sealed class PayoutsResource
                 "Beneficiary.Nib é obrigatório para payouts bancários.");
         }
 
-        if (beneficiary.Nib.Length != 21 || !beneficiary.Nib.All(IsAsciiDigit))
+        if (beneficiary.Nib.Length != 21 ||
+            !beneficiary.Nib.All(IsAsciiDigit))
         {
             throw new PaySuiteValidationException(
                 "Beneficiary.Nib deve conter 21 dígitos.");
@@ -212,7 +195,8 @@ public sealed class PayoutsResource
         ValidateHolder(beneficiary);
     }
 
-    private static void ValidateHolder(Beneficiary beneficiary)
+    private static void ValidateHolder(
+        Beneficiary beneficiary)
     {
         if (string.IsNullOrWhiteSpace(beneficiary.Holder))
         {
@@ -221,8 +205,8 @@ public sealed class PayoutsResource
         }
     }
 
-    // char.IsDigit aceita dígitos Unicode de outros alfabetos; a API quer só 0-9.
-    private static bool IsAsciiDigit(char c) => c is >= '0' and <= '9';
+    private static bool IsAsciiDigit(char c)
+        => c is >= '0' and <= '9';
 
     private static bool IsAsciiLetterOrDigit(char c)
         => c is >= '0' and <= '9'
