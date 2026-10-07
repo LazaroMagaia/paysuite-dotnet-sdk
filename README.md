@@ -346,7 +346,26 @@ var response = await client.Payments.ListAsync(
 );
 ```
 
-Os dados da paginação encontram-se em:
+### Status da requisição
+
+O campo **`status`**, retornado fora do `body`, representa o estado da requisição.
+
+* Se o `status` for **`success`**, significa que a requisição foi processada com sucesso e os dados retornados no `body` podem ser utilizados.
+* Se o `status` for diferente de **`success`**, a requisição não foi bem-sucedida e os dados do `body` **não devem ser utilizados como dados válidos da resposta**. Nesse caso, deve-se tratar o erro de acordo com as informações retornadas pela API.
+
+Em outras palavras:
+
+```text
+status = success
+    → os dados do body são válidos e podem ser utilizados
+
+status ≠ success
+    → os dados do body não devem ser utilizados
+```
+
+### Paginação
+
+Quando a requisição for bem-sucedida, os dados da paginação encontram-se em:
 
 ```csharp
 var page = response.links;
@@ -355,16 +374,27 @@ var page = response.links;
 Exemplo:
 
 ```csharp
-if (page?.Items is not null)
+if (response.status == "success")
 {
-    foreach (var payment in page.Items)
+    var page = response.links;
+
+    if (page?.Items is not null)
     {
-        Console.WriteLine(
-            $"{payment.Id} - {payment.Amount} MZN - {payment.Status}"
-        );
+        foreach (var payment in page.Items)
+        {
+            Console.WriteLine(
+                $"{payment.Id} - {payment.Amount} MZN - {payment.Status}"
+            );
+        }
     }
 }
+else
+{
+    Console.WriteLine("A requisição não foi processada com sucesso.");
+}
 ```
+
+> **Importante:** não utilize os dados retornados no `body` antes de verificar o `status` da requisição. O `status` externo é quem determina se a resposta deve ser considerada bem-sucedida e se os dados podem ser utilizados.
 
 ---
 
