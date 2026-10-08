@@ -72,11 +72,11 @@ public sealed class ContactsResource
     /// <summary>
     /// Remove um contacto.
     /// </summary>
-    public async Task DeleteAsync(
+    public Task<ApiResponse<object>> DeleteAsync(
         string id,
         CancellationToken ct = default)
     {
-        await _api.SendAsync<ApiResponse<object>>(
+        return _api.SendAsync<ApiResponse<object>>(
             HttpMethod.Delete,
             $"contacts/{Guard.Id(id)}",
             ct: ct);
