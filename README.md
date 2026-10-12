@@ -1,41 +1,41 @@
 # PaySuite .NET SDK
 
-SDK não oficial em .NET para integração com a API da PaySuite.
+Unofficial .NET SDK for integrating with the PaySuite API.
 
-Este projeto disponibiliza uma API .NET tipada e organizada por recursos para facilitar a integração com os serviços da PaySuite.
+This project provides a typed, resource-oriented .NET API that makes it easier to integrate with PaySuite services.
 
-> ⚠️ **Aviso:** este é um SDK não oficial. Este projeto não é afiliado, patrocinado, mantido ou oficialmente suportado pela PaySuite.
+> ⚠️ **Notice:** this is an unofficial SDK. This project is not affiliated with, sponsored by, maintained by, or officially supported by PaySuite.
 
 ---
 
-## 📚 Documentação oficial
+## 📚 Official documentation
 
-A documentação oficial da API pode ser consultada em:
+The official API documentation is available at:
 
 https://paysuite.tech/docs
 
 ---
 
-# 🚀 Funcionalidades
+# 🚀 Features
 
-| Recurso  | Operações                                                |
-| -------- | -------------------------------------------------------- |
-| Payments | Criar, consultar e listar pagamentos                     |
-| Payouts  | Criar, consultar e listar payouts                        |
-| Refunds  | Criar, consultar e listar reembolsos                     |
-| Contacts | Criar, consultar, atualizar, eliminar e listar contactos |
+| Resource | Operations                                          |
+| -------- | --------------------------------------------------- |
+| Payments | Create, retrieve and list payments                  |
+| Payouts  | Create, retrieve and list payouts                   |
+| Refunds  | Create, retrieve and list refunds                   |
+| Contacts | Create, retrieve, update, delete and list contacts  |
 
 ---
 
-# 📦 Instalação
+# 📦 Installation
 
-Instale o SDK através do NuGet:
+Install the SDK via NuGet:
 
 ```bash
 dotnet add package PaySuite.Sdk --version 0.1.3
 ```
 
-Depois:
+Then:
 
 ```csharp
 using PaySuite.Sdk;
@@ -43,25 +43,25 @@ using PaySuite.Sdk;
 
 ---
 
-# 🔑 Autenticação
+# 🔑 Authentication
 
-O SDK utiliza um token Bearer para autenticação.
+The SDK uses a Bearer token for authentication.
 
-É recomendado utilizar uma variável de ambiente.
+Using an environment variable is recommended.
 
 ### Linux / macOS
 
 ```bash
-export PAYSUITE_TOKEN="seu-token"
+export PAYSUITE_TOKEN="your-token"
 ```
 
 ### Windows PowerShell
 
 ```powershell
-$env:PAYSUITE_TOKEN="seu-token"
+$env:PAYSUITE_TOKEN="your-token"
 ```
 
-No código:
+In code:
 
 ```csharp
 var token = Environment.GetEnvironmentVariable("PAYSUITE_TOKEN");
@@ -69,7 +69,7 @@ var token = Environment.GetEnvironmentVariable("PAYSUITE_TOKEN");
 if (string.IsNullOrWhiteSpace(token))
 {
     throw new InvalidOperationException(
-        "PAYSUITE_TOKEN não configurado."
+        "PAYSUITE_TOKEN is not configured."
     );
 }
 ```
@@ -86,14 +86,14 @@ var token = Environment.GetEnvironmentVariable("PAYSUITE_TOKEN");
 if (string.IsNullOrWhiteSpace(token))
 {
     throw new InvalidOperationException(
-        "PAYSUITE_TOKEN não configurado."
+        "PAYSUITE_TOKEN is not configured."
     );
 }
 
 using var client = new PaySuiteClient(token);
 ```
 
-Depois disso:
+After that:
 
 ```csharp
 client.Payments
@@ -102,15 +102,15 @@ client.Refunds
 client.Contacts
 ```
 
-ficam disponíveis para utilização.
+are available for use.
 
 ---
 
-# 📦 Estrutura das respostas
+# 📦 Response structure
 
-Os métodos dos Resources retornam `ApiResponse<T>`.
+Resource methods return `ApiResponse<T>`.
 
-Por exemplo:
+For example:
 
 ```csharp
 var response = await client.Payments.GetAsync(
@@ -118,7 +118,7 @@ var response = await client.Payments.GetAsync(
 );
 ```
 
-Neste caso:
+In this case:
 
 ```text
 ApiResponse<Payment>
@@ -135,20 +135,20 @@ ApiResponse<Payment>
 
 ## Response vs Data
 
-É importante distinguir os dados da resposta dos dados do recurso.
+It is important to distinguish the response data from the resource data.
 
-### Dados da resposta
+### Response data
 
 ```csharp
 response.Message
 response.Status
 ```
 
-Estas propriedades pertencem ao `ApiResponse<T>`.
+These properties belong to `ApiResponse<T>`.
 
-### Dados do recurso
+### Resource data
 
-O recurso retornado encontra-se dentro de `Data`.
+The returned resource is inside `Data`.
 
 ```csharp
 response.Data?.Id
@@ -157,7 +157,7 @@ response.Data?.Reference
 response.Data?.Status
 ```
 
-Por exemplo:
+For example:
 
 ```csharp
 var response = await client.Payments.GetAsync(paymentId);
@@ -171,9 +171,9 @@ Console.WriteLine($"Reference : {response.Data?.Reference}");
 Console.WriteLine($"PayStatus : {response.Data?.Status}");
 ```
 
-### Guardar o `Data` numa variável
+### Storing `Data` in a variable
 
-Também é possível extrair o recurso:
+You can also extract the resource:
 
 ```csharp
 var response = await client.Payments.GetAsync(paymentId);
@@ -181,7 +181,7 @@ var response = await client.Payments.GetAsync(paymentId);
 var payment = response.Data;
 ```
 
-A partir desse momento:
+From that point on:
 
 ```csharp
 payment?.Id
@@ -190,25 +190,25 @@ payment?.Reference
 payment?.Status
 ```
 
-Neste caso já não precisamos de utilizar `Data`, porque `payment` é o objeto `Payment`.
+In this case we no longer need to use `Data`, because `payment` is the `Payment` object.
 
-A regra é simples:
+The rule is simple:
 
 ```text
 response.X
     ↓
-propriedade do ApiResponse<T>
+property of ApiResponse<T>
 
 response.Data?.X
     ↓
-propriedade do recurso T
+property of the resource T
 ```
 
 ---
 
 # 💳 Payments
 
-O recurso `Payments` permite criar, consultar e listar pedidos de pagamento.
+The `Payments` resource lets you create, retrieve and list payment requests.
 
 ```csharp
 client.Payments
@@ -216,7 +216,7 @@ client.Payments
 
 ---
 
-## Criar Payment
+## Create Payment
 
 Endpoint:
 
@@ -232,7 +232,7 @@ var request = new CreatePaymentRequest
     Amount = 100.50m,
     Method = "mpesa",
     Reference = "INV123456",
-    Description = "Pagamento da fatura",
+    Description = "Invoice payment",
     ReturnUrl = "https://example.com/success",
     WebhookUrl = "https://example.com/webhooks/paysuite",
     ContactId = "01H8X9V8X9Y8Z9A8B8C8D8E8F8"
@@ -243,37 +243,37 @@ var response = await client.Payments.CreateAsync(request);
 
 ### JSON Body
 
-A requisição será equivalente a:
+The request will be equivalent to:
 
 ```json
 {
   "amount": 100.5,
   "method": "mpesa",
   "reference": "INV123456",
-  "description": "Pagamento da fatura",
+  "description": "Invoice payment",
   "return_url": "https://example.com/success",
   "webhook_url": "https://example.com/webhooks/paysuite",
   "contact_id": "01H8X9V8X9Y8Z9A8B8C8D8E8F8"
 }
 ```
 
-### Campos
+### Fields
 
-| Campo         | Tipo    | Obrigatório | Descrição                              |
-| ------------- | ------- | ----------: | -------------------------------------- |
-| `amount`      | decimal |         Sim | Valor em MZN. Entre 10 e 1.000.000     |
-| `method`      | string  |         Não | `credit_card`, `mpesa` ou `emola`      |
-| `reference`   | string  |         Sim | Referência única, máximo 50 caracteres |
-| `description` | string  |         Não | Máximo 125 caracteres                  |
-| `return_url`  | string  |         Não | URL para retorno após o pagamento      |
-| `webhook_url` | string  |         Não | URL de webhook                         |
-| `contact_id`  | string  |         Não | ULID de um contacto                    |
+| Field         | Type    | Required | Description                                |
+| ------------- | ------- | -------: | ------------------------------------------ |
+| `amount`      | decimal |      Yes | Amount in MZN. Between 10 and 1,000,000    |
+| `method`      | string  |       No | `credit_card`, `mpesa` or `emola`          |
+| `reference`   | string  |      Yes | Unique reference, maximum 50 characters    |
+| `description` | string  |       No | Maximum 125 characters                     |
+| `return_url`  | string  |       No | URL to return to after the payment         |
+| `webhook_url` | string  |       No | Webhook URL                                |
+| `contact_id`  | string  |       No | ULID of a contact                          |
 
-Se `webhook_url` não for informado, será utilizado o webhook configurado para a conta, quando aplicável.
+If `webhook_url` is not provided, the webhook configured for the account will be used, where applicable.
 
 ---
 
-## Exemplo completo
+## Full example
 
 ```csharp
 var response = await client.Payments.CreateAsync(
@@ -282,7 +282,7 @@ var response = await client.Payments.CreateAsync(
         Amount = 100.50m,
         Method = "mpesa",
         Reference = "INV123456",
-        Description = "Pagamento da fatura",
+        Description = "Invoice payment",
         ReturnUrl = "https://example.com/success",
         WebhookUrl = "https://example.com/webhooks/paysuite",
         ContactId = "01H8X9V8X9Y8Z9A8B8C8D8E8F8"
@@ -302,7 +302,7 @@ Console.WriteLine($"Status    : {payment?.Status}");
 
 ---
 
-## Consultar Payment
+## Retrieve Payment
 
 Endpoint:
 
@@ -316,7 +316,7 @@ var response = await client.Payments.GetAsync(
 );
 ```
 
-Exemplo:
+Example:
 
 ```csharp
 Console.WriteLine($"Response Status : {response.Status}");
@@ -331,7 +331,7 @@ Console.WriteLine($"Payment Status  : {payment?.Status}");
 
 ---
 
-## Listar Payments
+## List Payments
 
 Endpoint:
 
@@ -346,32 +346,32 @@ var response = await client.Payments.ListAsync(
 );
 ```
 
-### Status da requisição
+### Request status
 
-O campo **`status`**, retornado fora do `body`, representa o estado da requisição.
+The **`status`** field, returned outside the `body`, represents the state of the request.
 
-* Se o `status` for **`success`**, significa que a requisição foi processada com sucesso e os dados retornados no `body` podem ser utilizados.
-* Se o `status` for diferente de **`success`**, a requisição não foi bem-sucedida e os dados do `body` **não devem ser utilizados como dados válidos da resposta**. Nesse caso, deve-se tratar o erro de acordo com as informações retornadas pela API.
+* If `status` is **`success`**, the request was processed successfully and the data returned in the `body` can be used.
+* If `status` is anything other than **`success`**, the request was not successful and the `body` data **must not be used as valid response data**. In that case, handle the error according to the information returned by the API.
 
-Em outras palavras:
+In other words:
 
 ```text
 status = success
-    → os dados do body são válidos e podem ser utilizados
+    → the body data is valid and can be used
 
 status ≠ success
-    → os dados do body não devem ser utilizados
+    → the body data must not be used
 ```
 
-### Paginação
+### Pagination
 
-Quando a requisição for bem-sucedida, os dados da paginação encontram-se em:
+When the request is successful, the pagination data is located in:
 
 ```csharp
 var page = response.links;
 ```
 
-Exemplo:
+Example:
 
 ```csharp
 if (response.status == "success")
@@ -390,17 +390,17 @@ if (response.status == "success")
 }
 else
 {
-    Console.WriteLine("A requisição não foi processada com sucesso.");
+    Console.WriteLine("The request was not processed successfully.");
 }
 ```
 
-> **Importante:** não utilize os dados retornados no `body` antes de verificar o `status` da requisição. O `status` externo é quem determina se a resposta deve ser considerada bem-sucedida e se os dados podem ser utilizados.
+> **Important:** do not use the data returned in the `body` before checking the request `status`. The outer `status` determines whether the response should be considered successful and whether the data can be used.
 
 ---
 
 # 💸 Payouts
 
-O recurso `Payouts` permite criar, consultar e listar payouts.
+The `Payouts` resource lets you create, retrieve and list payouts.
 
 ```csharp
 client.Payouts
@@ -408,7 +408,7 @@ client.Payouts
 
 ---
 
-## Criar Payout
+## Create Payout
 
 Endpoint:
 
@@ -416,9 +416,9 @@ Endpoint:
 POST /api/v1/payouts
 ```
 
-Um payout pode utilizar um método mobile ou bancário.
+A payout can use a mobile or a bank method.
 
-Métodos mobile:
+Mobile methods:
 
 ```text
 mpesa
@@ -426,14 +426,14 @@ emola
 mkesh
 ```
 
-Métodos bancários:
+Bank methods:
 
 ```text
 bank
 bank_transfer
 ```
 
-### Payout Mobile
+### Mobile Payout
 
 ```csharp
 var request = new CreatePayoutRequest
@@ -442,7 +442,7 @@ var request = new CreatePayoutRequest
     Currency = "MZN",
     Method = "mpesa",
     Reference = "PO123456",
-    Description = "Pagamento ao beneficiário",
+    Description = "Payment to beneficiary",
     Beneficiary = new PayoutBeneficiary
     {
         Phone = "841234567",
@@ -462,7 +462,7 @@ JSON:
   "currency": "MZN",
   "method": "mpesa",
   "reference": "PO123456",
-  "description": "Pagamento ao beneficiário",
+  "description": "Payment to beneficiary",
   "beneficiary": {
     "phone": "841234567",
     "holder": "John Doe"
@@ -471,9 +471,9 @@ JSON:
 }
 ```
 
-### Payout Bancário
+### Bank Payout
 
-Para `bank` ou `bank_transfer`, utiliza-se o NIB:
+For `bank` or `bank_transfer`, the NIB is used:
 
 ```csharp
 var request = new CreatePayoutRequest
@@ -482,7 +482,7 @@ var request = new CreatePayoutRequest
     Currency = "MZN",
     Method = "bank",
     Reference = "PO123456",
-    Description = "Transferência bancária",
+    Description = "Bank transfer",
     Beneficiary = new PayoutBeneficiary
     {
         Nib = "123456789012345678901",
@@ -499,7 +499,7 @@ JSON:
   "currency": "MZN",
   "method": "bank",
   "reference": "PO123456",
-  "description": "Transferência bancária",
+  "description": "Bank transfer",
   "beneficiary": {
     "nib": "123456789012345678901",
     "holder": "John Doe"
@@ -507,23 +507,23 @@ JSON:
 }
 ```
 
-### Campos
+### Fields
 
-| Campo                | Tipo    | Obrigatório | Descrição                                          |
+| Field                | Type    | Required    | Description                                        |
 | -------------------- | ------- | ----------: | -------------------------------------------------- |
-| `amount`             | decimal |         Sim | 1 – 1.000.000 MZN                                  |
-| `currency`           | string  |         Sim | Atualmente `MZN`                                   |
-| `method`             | string  |         Sim | `mpesa`, `emola`, `mkesh`, `bank`, `bank_transfer` |
-| `reference`          | string  |         Sim | Alfanumérica, máximo 30 caracteres                 |
-| `description`        | string  |         Não | Máximo 255 caracteres                              |
-| `beneficiary.phone`  | string  | Condicional | 9 dígitos para métodos mobile                      |
-| `beneficiary.nib`    | string  | Condicional | 21 dígitos para métodos bancários                  |
-| `beneficiary.holder` | string  |         Sim | Nome do titular                                    |
-| `webhook_url`        | string  |         Não | URL do webhook                                     |
+| `amount`             | decimal |         Yes | 1 – 1,000,000 MZN                                  |
+| `currency`           | string  |         Yes | Currently `MZN`                                    |
+| `method`             | string  |         Yes | `mpesa`, `emola`, `mkesh`, `bank`, `bank_transfer` |
+| `reference`          | string  |         Yes | Alphanumeric, maximum 30 characters                |
+| `description`        | string  |          No | Maximum 255 characters                             |
+| `beneficiary.phone`  | string  | Conditional | 9 digits for mobile methods                        |
+| `beneficiary.nib`    | string  | Conditional | 21 digits for bank methods                         |
+| `beneficiary.holder` | string  |         Yes | Account holder name                                |
+| `webhook_url`        | string  |          No | Webhook URL                                        |
 
 ---
 
-## Consultar Payout
+## Retrieve Payout
 
 ```csharp
 var response = await client.Payouts.GetAsync(
@@ -539,7 +539,7 @@ Console.WriteLine($"Status  : {payout?.Status}");
 
 ---
 
-## Listar Payouts
+## List Payouts
 
 ```csharp
 var response = await client.Payouts.ListAsync(
@@ -564,7 +564,7 @@ if (page?.Items is not null)
 
 # 🔄 Refunds
 
-O recurso `Refunds` permite criar, consultar e listar reembolsos.
+The `Refunds` resource lets you create, retrieve and list refunds.
 
 ```csharp
 client.Refunds
@@ -572,7 +572,7 @@ client.Refunds
 
 ---
 
-## Criar Refund
+## Create Refund
 
 Endpoint:
 
@@ -603,20 +603,20 @@ JSON:
 }
 ```
 
-### Campos
+### Fields
 
-| Campo         | Tipo    | Obrigatório | Descrição                     |
-| ------------- | ------- | ----------: | ----------------------------- |
-| `payment_id`  | string  |         Sim | ULID do pagamento             |
-| `amount`      | decimal |         Sim | Valor do reembolso            |
-| `reason`      | string  |         Sim | Motivo, máximo 500 caracteres |
-| `webhook_url` | string  |         Não | URL do webhook                |
+| Field         | Type    | Required | Description                    |
+| ------------- | ------- | -------: | ------------------------------ |
+| `payment_id`  | string  |      Yes | ULID of the payment            |
+| `amount`      | decimal |      Yes | Refund amount                  |
+| `reason`      | string  |      Yes | Reason, maximum 500 characters |
+| `webhook_url` | string  |       No | Webhook URL                    |
 
-O refund pode ser total ou parcial, dependendo do valor informado e das regras da API.
+The refund can be full or partial, depending on the amount provided and the API rules.
 
 ---
 
-## Consultar Refund
+## Retrieve Refund
 
 ```csharp
 var response = await client.Refunds.GetAsync(
@@ -632,7 +632,7 @@ Console.WriteLine($"Status : {refund?.Status}");
 
 ---
 
-## Listar Refunds
+## List Refunds
 
 ```csharp
 var response = await client.Refunds.ListAsync(
@@ -657,7 +657,7 @@ if (page?.Items is not null)
 
 # 👤 Contacts
 
-O recurso `Contacts` permite criar, consultar, atualizar, eliminar e listar contactos.
+The `Contacts` resource lets you create, retrieve, update, delete and list contacts.
 
 ```csharp
 client.Contacts
@@ -665,7 +665,7 @@ client.Contacts
 
 ---
 
-## Criar Contact
+## Create Contact
 
 Endpoint:
 
@@ -673,7 +673,7 @@ Endpoint:
 POST /api/v1/contacts
 ```
 
-Um contacto deve possuir **email ou telefone**.
+A contact must have an **email or a phone number**.
 
 ```csharp
 var request = new CreateContactRequest
@@ -696,7 +696,7 @@ JSON:
 }
 ```
 
-Também é possível criar apenas com email:
+You can also create one with only an email:
 
 ```json
 {
@@ -705,7 +705,7 @@ Também é possível criar apenas com email:
 }
 ```
 
-Ou apenas com telefone:
+Or with only a phone number:
 
 ```json
 {
@@ -714,19 +714,19 @@ Ou apenas com telefone:
 }
 ```
 
-### Campos
+### Fields
 
-| Campo   | Tipo   | Obrigatório | Descrição                 |
-| ------- | ------ | ----------: | ------------------------- |
-| `name`  | string |         Sim | Nome do contacto          |
-| `email` | string | Condicional | Email do contacto         |
-| `phone` | string | Condicional | Telefone em formato E.164 |
+| Field   | Type   | Required    | Description                |
+| ------- | ------ | ----------: | -------------------------- |
+| `name`  | string |         Yes | Contact name               |
+| `email` | string | Conditional | Contact email              |
+| `phone` | string | Conditional | Phone number in E.164 format |
 
-> É obrigatório fornecer pelo menos `email` ou `phone`.
+> You must provide at least `email` or `phone`.
 
 ---
 
-## Consultar Contact
+## Retrieve Contact
 
 ```csharp
 var response = await client.Contacts.GetAsync(
@@ -743,7 +743,7 @@ Console.WriteLine($"Phone : {contact?.Phone}");
 
 ---
 
-## Atualizar Contact
+## Update Contact
 
 Endpoint:
 
@@ -751,15 +751,15 @@ Endpoint:
 PATCH /api/v1/contacts/{id}
 ```
 
-O update utiliza apenas os campos que precisam de ser alterados.
+The update only uses the fields that need to be changed.
 
 ```csharp
 var response = await client.Contacts.UpdateAsync(
     contactId,
     new UpdateContactRequest
     {
-        Name = "João Silva Atualizado",
-        Email = "novo@example.com"
+        Name = "João Silva Updated",
+        Email = "new@example.com"
     }
 );
 ```
@@ -768,12 +768,12 @@ JSON:
 
 ```json
 {
-  "name": "João Silva Atualizado",
-  "email": "novo@example.com"
+  "name": "João Silva Updated",
+  "email": "new@example.com"
 }
 ```
 
-Por exemplo, para alterar apenas o telefone:
+For example, to change only the phone number:
 
 ```csharp
 var response = await client.Contacts.UpdateAsync(
@@ -795,7 +795,7 @@ JSON:
 
 ---
 
-## Eliminar Contact
+## Delete Contact
 
 Endpoint:
 
@@ -811,11 +811,11 @@ var response = await client.Contacts.DeleteAsync(
 Console.WriteLine($"Message : {response.Message}");
 ```
 
-Um contacto associado a pagamentos pode não poder ser eliminado.
+A contact associated with payments may not be deletable.
 
 ---
 
-## Listar Contacts
+## List Contacts
 
 Endpoint:
 
@@ -830,7 +830,7 @@ var response = await client.Contacts.ListAsync(
 );
 ```
 
-É possível filtrar por email:
+You can filter by email:
 
 ```csharp
 var response = await client.Contacts.ListAsync(
@@ -840,7 +840,7 @@ var response = await client.Contacts.ListAsync(
 );
 ```
 
-Os dados encontram-se em:
+The data is located in:
 
 ```csharp
 var page = response.Data;
@@ -850,7 +850,7 @@ var page = response.Data;
 
 # 🌐 Webhooks
 
-Os recursos que suportam webhook aceitam:
+Resources that support webhooks accept:
 
 ```json
 {
@@ -858,11 +858,11 @@ Os recursos que suportam webhook aceitam:
 }
 ```
 
-O campo é opcional.
+The field is optional.
 
-Quando não é informado, a API pode utilizar o webhook configurado para a conta.
+When it is not provided, the API may use the webhook configured for the account.
 
-Exemplo:
+Example:
 
 ```csharp
 var response = await client.Payments.CreateAsync(
@@ -878,11 +878,11 @@ var response = await client.Payments.CreateAsync(
 
 ---
 
-# 🔐 Validação de Webhooks
+# 🔐 Webhook Validation
 
-Caso a API forneça uma assinatura para validação do webhook, a aplicação deve validar a assinatura antes de processar os dados recebidos.
+If the API provides a signature for webhook validation, your application must validate the signature before processing the received data.
 
-Exemplo genérico utilizando HMAC SHA-256:
+Generic example using HMAC SHA-256:
 
 ```csharp
 using System.Security.Cryptography;
@@ -911,15 +911,15 @@ public static bool VerifySignature(
 }
 ```
 
-A implementação final deve seguir o mecanismo de assinatura definido pela documentação oficial da PaySuite.
+The final implementation must follow the signature mechanism defined in the official PaySuite documentation.
 
 ---
 
-# ⚠️ Tratamento de erros
+# ⚠️ Error handling
 
-O SDK realiza validações locais antes de enviar algumas requisições.
+The SDK performs local validations before sending some requests.
 
-Exemplo:
+Example:
 
 ```csharp
 try
@@ -937,37 +937,37 @@ try
 }
 catch (PaySuiteValidationException ex)
 {
-    Console.WriteLine("Erro de validação:");
+    Console.WriteLine("Validation error:");
     Console.WriteLine(ex.Message);
 }
 catch (PaySuiteException ex)
 {
-    Console.WriteLine("Erro da PaySuite:");
+    Console.WriteLine("PaySuite error:");
     Console.WriteLine(ex.Message);
 }
 catch (Exception ex)
 {
-    Console.WriteLine("Erro inesperado:");
+    Console.WriteLine("Unexpected error:");
     Console.WriteLine(ex.Message);
 }
 ```
 
 ---
 
-# 🛡️ Validações locais
+# 🛡️ Local validations
 
 ## Payments
 
-O SDK valida, entre outras regras:
+The SDK validates, among other rules:
 
-* `amount` entre `10` e `1.000.000`
-* `reference` obrigatória
-* `reference` máximo de 50 caracteres
-* `description` máximo de 125 caracteres
-* `return_url` válida quando fornecida
-* `webhook_url` válida quando fornecida
+* `amount` between `10` and `1,000,000`
+* `reference` is required
+* `reference` maximum of 50 characters
+* `description` maximum of 125 characters
+* `return_url` is valid when provided
+* `webhook_url` is valid when provided
 
-Métodos suportados:
+Supported methods:
 
 ```text
 credit_card
@@ -979,37 +979,37 @@ emola
 
 ## Payouts
 
-O SDK valida:
+The SDK validates:
 
-* `amount` entre `1` e `1.000.000`
+* `amount` between `1` and `1,000,000`
 * `currency = MZN`
-* `reference` obrigatória
-* `reference` alfanumérica
-* `reference` máximo de 30 caracteres
-* `description` máximo de 255 caracteres
-* método suportado
-* telefone mobile com 9 dígitos
-* NIB bancário com 21 dígitos
-* `holder` obrigatório
-* `webhook_url` válida quando fornecida
+* `reference` is required
+* `reference` is alphanumeric
+* `reference` maximum of 30 characters
+* `description` maximum of 255 characters
+* supported method
+* mobile phone number with 9 digits
+* bank NIB with 21 digits
+* `holder` is required
+* `webhook_url` is valid when provided
 
 ---
 
 ## Refunds
 
-São validados:
+The following are validated:
 
-* `payment_id` obrigatório
-* `amount` válido
-* `reason` obrigatório
-* `reason` máximo de 500 caracteres
-* `webhook_url` válida quando fornecida
+* `payment_id` is required
+* valid `amount`
+* `reason` is required
+* `reason` maximum of 500 characters
+* `webhook_url` is valid when provided
 
 ---
 
-# 🧩 HttpClient personalizado
+# 🧩 Custom HttpClient
 
-É possível utilizar uma instância própria de `HttpClient`.
+You can use your own `HttpClient` instance.
 
 ```csharp
 using var httpClient = new HttpClient();
@@ -1018,20 +1018,20 @@ PaySuiteClient.Configure(
     httpClient,
     new PaySuiteOptions
     {
-        Token = "seu-token"
+        Token = "your-token"
     }
 );
 
 using var client = new PaySuiteClient(httpClient);
 ```
 
-Isto permite integrar o SDK com configurações próprias de `HttpClient`, handlers, proxies ou `HttpClientFactory`.
+This lets you integrate the SDK with your own `HttpClient` configuration, handlers, proxies or `HttpClientFactory`.
 
 ---
 
 # ⚙️ PaySuiteOptions
 
-Exemplo:
+Example:
 
 ```csharp
 var options = new PaySuiteOptions
@@ -1049,29 +1049,29 @@ using var client = new PaySuiteClient(
 
 ---
 
-# 🧪 Teste rápido
+# 🧪 Quick test
 
-Para testar o SDK rapidamente através de uma aplicação Console:
+To quickly test the SDK with a Console application:
 
 ```bash
 dotnet new console -n PaySuite.Test
 cd PaySuite.Test
 ```
 
-Adicionar referência ao SDK local:
+Add a reference to the local SDK:
 
 ```bash
 dotnet add reference \
     ../PaySuite.Sdk/src/PaySuite.Sdk/PaySuite.Sdk.csproj
 ```
 
-Configurar o token:
+Configure the token:
 
 ```bash
-export PAYSUITE_TOKEN="seu-token"
+export PAYSUITE_TOKEN="your-token"
 ```
 
-No `Program.cs`:
+In `Program.cs`:
 
 ```csharp
 using PaySuite.Sdk;
@@ -1080,7 +1080,7 @@ var token = Environment.GetEnvironmentVariable("PAYSUITE_TOKEN");
 
 if (string.IsNullOrWhiteSpace(token))
 {
-    Console.WriteLine("PAYSUITE_TOKEN não configurado.");
+    Console.WriteLine("PAYSUITE_TOKEN is not configured.");
     return;
 }
 
@@ -1092,7 +1092,7 @@ var fetchedPayment =
     );
 
 Console.WriteLine();
-Console.WriteLine("Pagamento consultado:");
+Console.WriteLine("Payment retrieved:");
 
 Console.WriteLine(
     $"  Success   : {fetchedPayment.Success}"
@@ -1123,7 +1123,7 @@ Console.WriteLine(
 );
 ```
 
-Executar:
+Run:
 
 ```bash
 dotnet run
@@ -1131,20 +1131,20 @@ dotnet run
 
 ---
 
-# 🔧 Desenvolvimento local
+# 🔧 Local development
 
-Durante o desenvolvimento, é possível referenciar diretamente o projeto do SDK:
+During development, you can reference the SDK project directly:
 
 ```bash
 dotnet add reference \
     ../PaySuite.Sdk/src/PaySuite.Sdk/PaySuite.Sdk.csproj
 ```
 
-Isto permite testar alterações imediatamente sem precisar criar e instalar um novo pacote NuGet.
+This lets you test changes immediately without having to create and install a new NuGet package.
 
 ---
 
-# 📁 Estrutura do projeto
+# 📁 Project structure
 
 ```text
 PaySuite.Sdk/
@@ -1187,12 +1187,12 @@ PaySuite.Sdk/
 
 ---
 
-# 🏗️ Arquitetura
+# 🏗️ Architecture
 
-A arquitetura do SDK segue aproximadamente:
+The SDK architecture roughly follows:
 
 ```text
-Aplicação
+Application
     │
     ▼
 PaySuiteClient
@@ -1212,13 +1212,13 @@ PaySuiteClient
        PaySuite API
 ```
 
-O `PaySuiteClient` é o ponto de entrada principal:
+`PaySuiteClient` is the main entry point:
 
 ```csharp
 using var client = new PaySuiteClient(token);
 ```
 
-Os Resources ficam disponíveis através do cliente:
+Resources are available through the client:
 
 ```csharp
 client.Payments
@@ -1231,11 +1231,11 @@ client.Contacts
 
 # 📡 ApiClient
 
-O `ApiClient` é responsável pela comunicação HTTP com a API.
+`ApiClient` is responsible for HTTP communication with the API.
 
-Os Resources não precisam trabalhar diretamente com `HttpClient`.
+Resources do not need to work with `HttpClient` directly.
 
-Por exemplo:
+For example:
 
 ```csharp
 return _api.GetDataAsync<Payment>(
@@ -1245,13 +1245,13 @@ return _api.GetDataAsync<Payment>(
 );
 ```
 
-O resultado é:
+The result is:
 
 ```csharp
 ApiResponse<Payment>
 ```
 
-Isso mantém separadas as responsabilidades:
+This keeps responsibilities separate:
 
 ```text
 Resource
@@ -1267,9 +1267,9 @@ API
 
 # 📦 Resources
 
-Os Resources fornecem uma API orientada ao domínio.
+Resources provide a domain-oriented API.
 
-Em vez de:
+Instead of:
 
 ```csharp
 httpClient.GetAsync(
@@ -1277,13 +1277,13 @@ httpClient.GetAsync(
 );
 ```
 
-o consumidor utiliza:
+the consumer uses:
 
 ```csharp
 await client.Payments.GetAsync(id);
 ```
 
-Da mesma forma:
+Likewise:
 
 ```csharp
 await client.Payments.CreateAsync(request);
@@ -1297,15 +1297,15 @@ await client.Contacts.CreateAsync(request);
 
 ---
 
-# 🧪 Testes
+# 🧪 Tests
 
-Executar os testes:
+Run the tests:
 
 ```bash
 dotnet test
 ```
 
-Com mais detalhes:
+With more detail:
 
 ```bash
 dotnet test --verbosity normal
@@ -1315,13 +1315,13 @@ dotnet test --verbosity normal
 
 # 📦 Build
 
-Build normal:
+Normal build:
 
 ```bash
 dotnet build
 ```
 
-Build de Release:
+Release build:
 
 ```bash
 dotnet build -c Release
@@ -1329,21 +1329,21 @@ dotnet build -c Release
 
 ---
 
-# 📦 Criar pacote NuGet
+# 📦 Create the NuGet package
 
-Limpar:
+Clean:
 
 ```bash
 dotnet clean
 ```
 
-Criar o pacote:
+Create the package:
 
 ```bash
 dotnet pack -c Release
 ```
 
-O pacote será criado em:
+The package will be created in:
 
 ```text
 bin/Release/
@@ -1351,24 +1351,24 @@ bin/Release/
 
 ---
 
-# 🚀 Publicar no NuGet
+# 🚀 Publish to NuGet
 
-Depois de testar o pacote:
+After testing the package:
 
 ```bash
 dotnet nuget push \
     bin/Release/PaySuite.Sdk.1.0.0.nupkg \
-    --api-key SEU_API_KEY \
+    --api-key YOUR_API_KEY \
     --source https://api.nuget.org/v3/index.json
 ```
 
-Nunca coloque uma API key diretamente no código ou no repositório.
+Never put an API key directly in your code or repository.
 
 ---
 
-# 🔢 Versionamento
+# 🔢 Versioning
 
-Atualize a versão no `PaySuite.Sdk.csproj`:
+Update the version in `PaySuite.Sdk.csproj`:
 
 ```xml
 <PropertyGroup>
@@ -1376,7 +1376,7 @@ Atualize a versão no `PaySuite.Sdk.csproj`:
 </PropertyGroup>
 ```
 
-Depois:
+Then:
 
 ```bash
 dotnet clean
@@ -1385,16 +1385,16 @@ dotnet pack -c Release
 
 ---
 
-# 🔒 Segurança
+# 🔒 Security
 
-Nunca coloque tokens diretamente no código:
+Never put tokens directly in your code:
 
 ```csharp
-// ❌ Evitar
-var token = "seu-token";
+// ❌ Avoid
+var token = "your-token";
 ```
 
-Prefira:
+Prefer:
 
 ```csharp
 var token = Environment.GetEnvironmentVariable(
@@ -1402,95 +1402,95 @@ var token = Environment.GetEnvironmentVariable(
 );
 ```
 
-Nunca faça commit de:
+Never commit:
 
 * tokens;
 * API keys;
-* credenciais;
+* credentials;
 * secrets;
-* tokens de produção.
+* production tokens.
 
 ---
 
 # 🗺️ Roadmap
 
-* [ ] Melhor cobertura de testes
-* [ ] Testes de integração
-* [ ] Suporte completo a `HttpClientFactory`
-* [ ] Melhor tratamento de erros HTTP
-* [ ] Documentação XML / IntelliSense
-* [ ] Exemplos ASP.NET Core
-* [ ] Exemplos de integração
-* [ ] Melhor cobertura de webhooks
+* [ ] Better test coverage
+* [ ] Integration tests
+* [ ] Full `HttpClientFactory` support
+* [ ] Better HTTP error handling
+* [ ] XML documentation / IntelliSense
+* [ ] ASP.NET Core examples
+* [ ] Integration examples
+* [ ] Better webhook coverage
 * [ ] CI/CD
-* [ ] Publicação automatizada no NuGet
-* [ ] Suporte a novas funcionalidades da API PaySuite
+* [ ] Automated NuGet publishing
+* [ ] Support for new PaySuite API features
 
 ---
 
-# 🤝 Contribuição
+# 🤝 Contributing
 
-Clone o projeto:
+Clone the project:
 
 ```bash
 git clone https://github.com/LazaroMagaia/paysuite-dotnet-sdk.git
 ```
 
-Entre no diretório:
+Enter the directory:
 
 ```bash
 cd paysuite-dotnet-sdk
 ```
 
-Restaure as dependências:
+Restore dependencies:
 
 ```bash
 dotnet restore
 ```
 
-Execute os testes:
+Run the tests:
 
 ```bash
 dotnet test
 ```
 
-Crie uma branch:
+Create a branch:
 
 ```bash
-git checkout -b feature/minha-feature
+git checkout -b feature/my-feature
 ```
 
-Depois:
+Then:
 
 ```bash
 git add .
-git commit -m "feat: adiciona nova funcionalidade"
-git push origin feature/minha-feature
+git commit -m "feat: add new feature"
+git push origin feature/my-feature
 ```
 
 ---
 
-# 📄 Licença
+# 📄 License
 
-Consulte o ficheiro `LICENSE` para obter os termos completos da licença.
+See the `LICENSE` file for the full license terms.
 
 ---
 
 # ⚠️ Disclaimer
 
-Este projeto é um SDK desenvolvido pela comunidade e não possui vínculo oficial com a PaySuite.
+This project is an SDK developed by the community and has no official affiliation with PaySuite.
 
-A PaySuite e os seus respetivos produtos, serviços, serviços financeiros e marcas pertencem aos seus respetivos proprietários.
+PaySuite and its respective products, services, financial services and trademarks belong to their respective owners.
 
-Para informações oficiais sobre endpoints, autenticação, parâmetros, webhooks, limites e comportamento da API, consulte:
+For official information about endpoints, authentication, parameters, webhooks, limits and API behavior, see:
 
 https://paysuite.tech/docs
 
 ---
 
-# 👨‍💻 Autor
+# 👨‍💻 Author
 
-Desenvolvido por **Lázaro Magaia**.
+Developed by **Lázaro Magaia**.
 
 GitHub:
 
