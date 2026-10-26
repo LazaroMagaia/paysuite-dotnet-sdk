@@ -32,7 +32,7 @@ https://paysuite.tech/docs
 Install the SDK via NuGet:
 
 ```bash
-dotnet add package PaySuite.Sdk --version 0.1.3
+dotnet add package PaySuite.Sdk --version 0.1.4
 ```
 
 Then:
