@@ -850,7 +850,7 @@ var page = response.Data;
 
 # 🌐 Webhooks
 
-Resources that support webhooks accept:
+Resources that support webhooks accept an optional `webhook_url` field.
 
 ```json
 {
@@ -858,11 +858,9 @@ Resources that support webhooks accept:
 }
 ```
 
-The field is optional.
+When `webhook_url` is not provided, the API may use the webhook configured for the account.
 
-When it is not provided, the API may use the webhook configured for the account.
-
-Example:
+### Example: Configure a webhook when creating a payment
 
 ```csharp
 var response = await client.Payments.CreateAsync(
@@ -879,6 +877,218 @@ var response = await client.Payments.CreateAsync(
 ---
 
 # 🔐 Webhook Validation
+
+The PaySuite SDK provides `PaySuiteWebhook` to simplify webhook integration. It reads the incoming request body, validates the `X-Signature` header, parses the event, and returns a structured `WebhookResult`.
+
+**No local testing workflow is required.** Configure a publicly accessible HTTPS endpoint and use the webhook URL when creating a payment or another supported resource.
+
+## 1. Configure the webhook secret
+
+Set the `PAYSUITE_WEBHOOK_SECRET` environment variable to the secret used to validate webhook signatures.
+
+```bash
+PAYSUITE_WEBHOOK_SECRET=your_webhook_secret
+```
+
+Keep this secret private. Never expose it in client-side code or commit it to source control.
+
+## 2. Implement the webhook endpoint
+
+The following example uses ASP.NET Core Minimal APIs and the PaySuite SDK's webhook validation API.
+
+```csharp
+using System.Text.Json;
+using PaySuite.Sdk.Webhooks;
+
+var builder = WebApplication.CreateBuilder(args);
+var app = builder.Build();
+
+var secret = Environment.GetEnvironmentVariable(
+    "PAYSUITE_WEBHOOK_SECRET")
+    ?? throw new InvalidOperationException(
+        "PAYSUITE_WEBHOOK_SECRET is not configured.");
+
+app.MapPost("/webhooks/paysuite", async (HttpRequest request) =>
+{
+    var result = await PaySuiteWebhook.ProcessAsync(
+        request.Body,
+        request.Headers["X-Signature"].ToString(),
+        secret,
+        request.HttpContext.RequestAborted);
+
+    if (!result.IsValid)
+    {
+        Console.Error.WriteLine(
+            $"Webhook rejected: {result.Status} - {result.Error}");
+
+        return Results.Json(
+            new
+            {
+                received = false,
+                status = result.Status.ToString(),
+                error = result.Error
+            },
+            statusCode: result.StatusCode);
+    }
+
+    var evt = result.Event!;
+    var data = evt.Data;
+
+    Console.WriteLine($"Event type: {result.Type}");
+    Console.WriteLine(
+        JsonSerializer.Serialize(evt));
+
+    switch (result.Type)
+    {
+        case WebhookEventType.PaymentSuccess:
+            // Mark the order identified by data.Reference as paid.
+            Console.WriteLine(
+                $"Payment successful: {data.Reference}");
+            break;
+
+        case WebhookEventType.PaymentFailed:
+            // Mark the order identified by data.Reference as failed.
+            Console.WriteLine(
+                $"Payment failed: {data.Reference}");
+            break;
+
+        case WebhookEventType.PayoutSuccess:
+            // Update the payout status in your application.
+            Console.WriteLine("Payout successful.");
+            break;
+
+        case WebhookEventType.PayoutFailed:
+            // Handle the failed payout.
+            Console.WriteLine("Payout failed.");
+            break;
+
+        case WebhookEventType.RefundSuccess:
+            // Update the refund status in your application.
+            Console.WriteLine("Refund successful.");
+            break;
+
+        case WebhookEventType.RefundFailed:
+            // Handle the failed refund.
+            Console.WriteLine("Refund failed.");
+            break;
+
+        case WebhookEventType.Unknown:
+            // Log or safely ignore unsupported event types.
+            Console.WriteLine("Unknown webhook event.");
+            break;
+    }
+
+    return Results.Ok(new
+    {
+        received = true,
+        type = result.Type.ToString(),
+        data
+    });
+});
+
+app.Run();
+```
+
+**Important:** Replace the example logging and comments with your application's business logic. Process payment updates idempotently so duplicate webhook deliveries do not apply the same operation more than once.
+
+## 3. Understanding the validation result
+
+`PaySuiteWebhook.ProcessAsync` returns a `WebhookResult` with the following properties:
+
+| Property | Description |
+|---|---|
+| `Status` | Validation outcome. |
+| `Type` | Normalized event type. |
+| `Event` | Parsed webhook event, when available. |
+| `Error` | Error description when validation fails. |
+| `IsValid` | `true` when `Status` is `Valid`. |
+| `StatusCode` | Suggested HTTP response code. |
+
+### Webhook validation statuses
+
+| `WebhookStatus` | Meaning | HTTP status |
+|---|---|---:|
+| `Valid` | Signature and required event data are valid. | `200 OK` |
+| `MissingSignature` | The `X-Signature` header is missing. | `401 Unauthorized` |
+| `InvalidSignature` | The signature does not match. | `401 Unauthorized` |
+| `InvalidPayload` | The payload cannot be parsed. | `400 Bad Request` |
+| `MissingData` | Required event fields are missing. | `422 Unprocessable Entity` |
+
+The SDK exposes these outcomes through `WebhookResult.Status` and `WebhookResult.Error`, allowing applications to handle failures without implementing signature validation and payload parsing themselves.
+
+### Successful response
+
+When the webhook is valid and processed successfully, return `200 OK`.
+
+Example response:
+
+```json
+{
+  "received": true,
+  "type": "PaymentSuccess",
+  "data": {
+    "id": "payment-id",
+    "reference": "INV123"
+  }
+}
+```
+
+The exact fields inside `data` depend on the event payload.
+
+### Error response
+
+If validation fails, return the HTTP status suggested by `WebhookResult.StatusCode`.
+
+Example response for an invalid signature:
+
+```json
+{
+  "received": false,
+  "status": "InvalidSignature",
+  "error": "Assinatura inválida."
+}
+```
+
+The response code is `401 Unauthorized`.
+
+**Response handling guidelines:**
+
+- Return `200 OK` after a valid event has been accepted and processed successfully.
+- Return `400 Bad Request` for an invalid payload.
+- Return `422 Unprocessable Entity` when required event data is missing.
+- Return `401 Unauthorized` when the signature is missing or invalid.
+- Do not return `200 OK` for a validation failure.
+- Configure logging and monitoring for rejected events, and follow the application's retry and reconciliation strategy.
+
+## 4. Supported webhook event types
+
+The SDK maps recognized webhook event names to `WebhookEventType`:
+
+| Event type | Description |
+|---|---|
+| `PaymentSuccess` | A payment succeeded. |
+| `PaymentFailed` | A payment failed. |
+| `PayoutSuccess` | A payout succeeded. |
+| `PayoutFailed` | A payout failed. |
+| `RefundSuccess` | A refund succeeded. |
+| `RefundFailed` | A refund failed. |
+| `Unknown` | The event name is not recognized by the SDK. |
+
+Use `WebhookResult.Type` to route events to the appropriate business logic. A valid signature and valid required data can produce a valid result with `Type = Unknown`; applications should handle this case safely.
+
+## 5. Important security considerations
+
+- Always validate incoming requests using `PaySuiteWebhook.ProcessAsync` or `PaySuiteWebhook.Process`.
+- Preserve the original request body when validating signatures. Do not deserialize and reserialize the JSON before signature verification.
+- Read the signature from the `X-Signature` header.
+- Keep `PAYSUITE_WEBHOOK_SECRET` secure.
+- Use HTTPS in production.
+- Persist important event identifiers and implement idempotent processing.
+- Do not acknowledge an event as successfully processed before the required business operation has completed or has been durably accepted for processing.
+
+For applications that already have the raw request body available, use `PaySuiteWebhook.Process(rawBody, signature, secret)`.
+
+
 
 If the API provides a signature for webhook validation, your application must validate the signature before processing the received data.
 
