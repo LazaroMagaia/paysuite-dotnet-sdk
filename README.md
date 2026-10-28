@@ -1297,38 +1297,6 @@ await client.Contacts.CreateAsync(request);
 
 ---
 
-# 🧪 Tests
-
-Run the tests:
-
-```bash
-dotnet test
-```
-
-With more detail:
-
-```bash
-dotnet test --verbosity normal
-```
-
----
-
-# 📦 Build
-
-Normal build:
-
-```bash
-dotnet build
-```
-
-Release build:
-
-```bash
-dotnet build -c Release
-```
-
----
-
 # 📦 Create the NuGet package
 
 Clean:
@@ -1348,41 +1316,6 @@ The package will be created in:
 ```text
 bin/Release/
 ```
-
----
-
-# 🚀 Publish to NuGet
-
-After testing the package:
-
-```bash
-dotnet nuget push \
-    bin/Release/PaySuite.Sdk.1.0.0.nupkg \
-    --api-key YOUR_API_KEY \
-    --source https://api.nuget.org/v3/index.json
-```
-
-Never put an API key directly in your code or repository.
-
----
-
-# 🔢 Versioning
-
-Update the version in `PaySuite.Sdk.csproj`:
-
-```xml
-<PropertyGroup>
-    <Version>1.0.1</Version>
-</PropertyGroup>
-```
-
-Then:
-
-```bash
-dotnet clean
-dotnet pack -c Release
-```
-
 ---
 
 # 🔒 Security
@@ -1401,30 +1334,6 @@ var token = Environment.GetEnvironmentVariable(
     "PAYSUITE_TOKEN"
 );
 ```
-
-Never commit:
-
-* tokens;
-* API keys;
-* credentials;
-* secrets;
-* production tokens.
-
----
-
-# 🗺️ Roadmap
-
-* [ ] Better test coverage
-* [ ] Integration tests
-* [ ] Full `HttpClientFactory` support
-* [ ] Better HTTP error handling
-* [ ] XML documentation / IntelliSense
-* [ ] ASP.NET Core examples
-* [ ] Integration examples
-* [ ] Better webhook coverage
-* [ ] CI/CD
-* [ ] Automated NuGet publishing
-* [ ] Support for new PaySuite API features
 
 ---
 
