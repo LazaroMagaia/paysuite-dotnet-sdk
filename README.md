@@ -1,16 +1,14 @@
 # PaySuite .NET SDK
 
-Unofficial .NET SDK for integrating with the PaySuite API.
+Official .NET SDK for integrating with the PaySuite API.
 
-This project provides a typed, resource-oriented .NET API that makes it easier to integrate with PaySuite services.
-
-> ⚠️ **Notice:** this is an unofficial SDK. This project is not affiliated with, sponsored by, maintained by, or officially supported by PaySuite.
+This project provides a typed, resource-oriented .NET API that makes it easier to integrate payments, payouts, refunds, contacts and webhooks from your .NET applications.
 
 ---
 
-## 📚 Official documentation
+## 📚 Documentation
 
-The official API documentation is available at:
+The API documentation is available at:
 
 https://paysuite.tech/docs
 
@@ -24,6 +22,7 @@ https://paysuite.tech/docs
 | Payouts  | Create, retrieve and list payouts                   |
 | Refunds  | Create, retrieve and list refunds                   |
 | Contacts | Create, retrieve, update, delete and list contacts  |
+| Webhooks | Signature validation and event parsing              |
 
 ---
 
@@ -93,7 +92,7 @@ if (string.IsNullOrWhiteSpace(token))
 using var client = new PaySuiteClient(token);
 ```
 
-After that:
+The following resources are then available:
 
 ```csharp
 client.Payments
@@ -101,8 +100,6 @@ client.Payouts
 client.Refunds
 client.Contacts
 ```
-
-are available for use.
 
 ---
 
@@ -135,18 +132,19 @@ ApiResponse<Payment>
 
 ## Response vs Data
 
-It is important to distinguish the response data from the resource data.
+It is important to distinguish the response properties from the resource properties.
 
-### Response data
+### Response properties
 
 ```csharp
+response.Success
 response.Message
 response.Status
 ```
 
 These properties belong to `ApiResponse<T>`.
 
-### Resource data
+### Resource properties
 
 The returned resource is inside `Data`.
 
@@ -190,7 +188,7 @@ payment?.Reference
 payment?.Status
 ```
 
-In this case we no longer need to use `Data`, because `payment` is the `Payment` object.
+Here `Data` is no longer needed, because `payment` is already the `Payment` object.
 
 The rule is simple:
 
@@ -203,6 +201,23 @@ response.Data?.X
     ↓
 property of the resource T
 ```
+
+## Checking the request status
+
+The response `Status` represents the state of the request.
+
+* If `Status` is **`success`**, the request was processed successfully and `Data` can be used.
+* If `Status` is anything other than **`success`**, the request was not successful and `Data` **must not be used as valid response data**. Handle the error according to the information returned in `Message`.
+
+```text
+Status = success
+    → Data is valid and can be used
+
+Status ≠ success
+    → Data must not be used
+```
+
+> **Important:** always check the request status before using `Data`.
 
 ---
 
@@ -243,7 +258,7 @@ var response = await client.Payments.CreateAsync(request);
 
 ### JSON Body
 
-The request will be equivalent to:
+The request is equivalent to:
 
 ```json
 {
@@ -269,11 +284,9 @@ The request will be equivalent to:
 | `webhook_url` | string  |       No | Webhook URL                                |
 | `contact_id`  | string  |       No | ULID of a contact                          |
 
-If `webhook_url` is not provided, the webhook configured for the account will be used, where applicable.
+If `webhook_url` is not provided, the webhook configured for the account is used, where applicable.
 
----
-
-## Full example
+### Full example
 
 ```csharp
 var response = await client.Payments.CreateAsync(
@@ -314,15 +327,10 @@ GET /api/v1/payments/{id}
 var response = await client.Payments.GetAsync(
     "01m487646hbykkwxzvknchfp0w"
 );
-```
-
-Example:
-
-```csharp
-Console.WriteLine($"Response Status : {response.Status}");
 
 var payment = response.Data;
 
+Console.WriteLine($"Response Status : {response.Status}");
 Console.WriteLine($"Payment Id      : {payment?.Id}");
 Console.WriteLine($"Amount          : {payment?.Amount} MZN");
 Console.WriteLine($"Reference       : {payment?.Reference}");
@@ -344,39 +352,10 @@ var response = await client.Payments.ListAsync(
     page: 1,
     limit: 20
 );
-```
 
-### Request status
-
-The **`status`** field, returned outside the `body`, represents the state of the request.
-
-* If `status` is **`success`**, the request was processed successfully and the data returned in the `body` can be used.
-* If `status` is anything other than **`success`**, the request was not successful and the `body` data **must not be used as valid response data**. In that case, handle the error according to the information returned by the API.
-
-In other words:
-
-```text
-status = success
-    → the body data is valid and can be used
-
-status ≠ success
-    → the body data must not be used
-```
-
-### Pagination
-
-When the request is successful, the pagination data is located in:
-
-```csharp
-var page = response.links;
-```
-
-Example:
-
-```csharp
-if (response.status == "success")
+if (response.Status == "success")
 {
-    var page = response.links;
+    var page = response.Data;
 
     if (page?.Items is not null)
     {
@@ -390,11 +369,11 @@ if (response.status == "success")
 }
 else
 {
-    Console.WriteLine("The request was not processed successfully.");
+    Console.WriteLine(
+        $"The request was not processed successfully: {response.Message}"
+    );
 }
 ```
-
-> **Important:** do not use the data returned in the `body` before checking the request `status`. The outer `status` determines whether the response should be considered successful and whether the data can be used.
 
 ---
 
@@ -489,6 +468,8 @@ var request = new CreatePayoutRequest
         Holder = "John Doe"
     }
 };
+
+var response = await client.Payouts.CreateAsync(request);
 ```
 
 JSON:
@@ -525,6 +506,12 @@ JSON:
 
 ## Retrieve Payout
 
+Endpoint:
+
+```text
+GET /api/v1/payouts/{id}
+```
+
 ```csharp
 var response = await client.Payouts.GetAsync(
     "01H8X9V8X9Y8Z9A8B8C8D8E8F8"
@@ -540,6 +527,12 @@ Console.WriteLine($"Status  : {payout?.Status}");
 ---
 
 ## List Payouts
+
+Endpoint:
+
+```text
+GET /api/v1/payouts
+```
 
 ```csharp
 var response = await client.Payouts.ListAsync(
@@ -618,6 +611,12 @@ The refund can be full or partial, depending on the amount provided and the API 
 
 ## Retrieve Refund
 
+Endpoint:
+
+```text
+GET /api/v1/refunds/{id}
+```
+
 ```csharp
 var response = await client.Refunds.GetAsync(
     "01H8X9V8X9Y8Z9A8B8C8D8E8F8"
@@ -633,6 +632,12 @@ Console.WriteLine($"Status : {refund?.Status}");
 ---
 
 ## List Refunds
+
+Endpoint:
+
+```text
+GET /api/v1/refunds
+```
 
 ```csharp
 var response = await client.Refunds.ListAsync(
@@ -696,7 +701,7 @@ JSON:
 }
 ```
 
-You can also create one with only an email:
+With only an email:
 
 ```json
 {
@@ -705,7 +710,7 @@ You can also create one with only an email:
 }
 ```
 
-Or with only a phone number:
+With only a phone number:
 
 ```json
 {
@@ -716,10 +721,10 @@ Or with only a phone number:
 
 ### Fields
 
-| Field   | Type   | Required    | Description                |
-| ------- | ------ | ----------: | -------------------------- |
-| `name`  | string |         Yes | Contact name               |
-| `email` | string | Conditional | Contact email              |
+| Field   | Type   | Required    | Description                  |
+| ------- | ------ | ----------: | ---------------------------- |
+| `name`  | string |         Yes | Contact name                 |
+| `email` | string | Conditional | Contact email                |
 | `phone` | string | Conditional | Phone number in E.164 format |
 
 > You must provide at least `email` or `phone`.
@@ -727,6 +732,12 @@ Or with only a phone number:
 ---
 
 ## Retrieve Contact
+
+Endpoint:
+
+```text
+GET /api/v1/contacts/{id}
+```
 
 ```csharp
 var response = await client.Contacts.GetAsync(
@@ -751,7 +762,7 @@ Endpoint:
 PATCH /api/v1/contacts/{id}
 ```
 
-The update only uses the fields that need to be changed.
+Only the fields that need to be changed are sent.
 
 ```csharp
 var response = await client.Contacts.UpdateAsync(
@@ -804,9 +815,7 @@ DELETE /api/v1/contacts/{id}
 ```
 
 ```csharp
-var response = await client.Contacts.DeleteAsync(
-    contactId
-);
+var response = await client.Contacts.DeleteAsync(contactId);
 
 Console.WriteLine($"Message : {response.Message}");
 ```
@@ -828,6 +837,8 @@ var response = await client.Contacts.ListAsync(
     page: 1,
     limit: 20
 );
+
+var page = response.Data;
 ```
 
 You can filter by email:
@@ -838,12 +849,6 @@ var response = await client.Contacts.ListAsync(
     limit: 20,
     email: "joao@example.com"
 );
-```
-
-The data is located in:
-
-```csharp
-var page = response.Data;
 ```
 
 ---
@@ -860,7 +865,7 @@ Resources that support webhooks accept an optional `webhook_url` field.
 
 When `webhook_url` is not provided, the API may use the webhook configured for the account.
 
-### Example: Configure a webhook when creating a payment
+### Example: configure a webhook when creating a payment
 
 ```csharp
 var response = await client.Payments.CreateAsync(
@@ -878,9 +883,9 @@ var response = await client.Payments.CreateAsync(
 
 # 🔐 Webhook Validation
 
-The PaySuite SDK provides `PaySuiteWebhook` to simplify webhook integration. It reads the incoming request body, validates the `X-Signature` header, parses the event, and returns a structured `WebhookResult`.
+The SDK provides `PaySuiteWebhook` to simplify webhook integration. It reads the incoming request body, validates the `X-Signature` header, parses the event and returns a structured `WebhookResult`.
 
-**No local testing workflow is required.** Configure a publicly accessible HTTPS endpoint and use the webhook URL when creating a payment or another supported resource.
+Your endpoint must be publicly accessible over HTTPS so PaySuite can reach it.
 
 ## 1. Configure the webhook secret
 
@@ -894,7 +899,7 @@ Keep this secret private. Never expose it in client-side code or commit it to so
 
 ## 2. Implement the webhook endpoint
 
-The following example uses ASP.NET Core Minimal APIs and the PaySuite SDK's webhook validation API.
+The following example uses ASP.NET Core Minimal APIs.
 
 ```csharp
 using System.Text.Json;
@@ -935,21 +940,18 @@ app.MapPost("/webhooks/paysuite", async (HttpRequest request) =>
     var data = evt.Data;
 
     Console.WriteLine($"Event type: {result.Type}");
-    Console.WriteLine(
-        JsonSerializer.Serialize(evt));
+    Console.WriteLine(JsonSerializer.Serialize(evt));
 
     switch (result.Type)
     {
         case WebhookEventType.PaymentSuccess:
             // Mark the order identified by data.Reference as paid.
-            Console.WriteLine(
-                $"Payment successful: {data.Reference}");
+            Console.WriteLine($"Payment successful: {data.Reference}");
             break;
 
         case WebhookEventType.PaymentFailed:
             // Mark the order identified by data.Reference as failed.
-            Console.WriteLine(
-                $"Payment failed: {data.Reference}");
+            Console.WriteLine($"Payment failed: {data.Reference}");
             break;
 
         case WebhookEventType.PayoutSuccess:
@@ -989,38 +991,34 @@ app.MapPost("/webhooks/paysuite", async (HttpRequest request) =>
 app.Run();
 ```
 
-**Important:** Replace the example logging and comments with your application's business logic. Process payment updates idempotently so duplicate webhook deliveries do not apply the same operation more than once.
+**Important:** replace the example logging and comments with your application's business logic. Process events idempotently so duplicate deliveries do not apply the same operation more than once.
 
 ## 3. Understanding the validation result
 
 `PaySuiteWebhook.ProcessAsync` returns a `WebhookResult` with the following properties:
 
-| Property | Description |
-|---|---|
-| `Status` | Validation outcome. |
-| `Type` | Normalized event type. |
-| `Event` | Parsed webhook event, when available. |
-| `Error` | Error description when validation fails. |
-| `IsValid` | `true` when `Status` is `Valid`. |
-| `StatusCode` | Suggested HTTP response code. |
+| Property     | Description                                  |
+| ------------ | -------------------------------------------- |
+| `Status`     | Validation outcome.                          |
+| `Type`       | Normalized event type.                       |
+| `Event`      | Parsed webhook event, when available.        |
+| `Error`      | Error description when validation fails.     |
+| `IsValid`    | `true` when `Status` is `Valid`.             |
+| `StatusCode` | Suggested HTTP response code.                |
 
-### Webhook validation statuses
+### Validation statuses
 
-| `WebhookStatus` | Meaning | HTTP status |
-|---|---|---:|
-| `Valid` | Signature and required event data are valid. | `200 OK` |
-| `MissingSignature` | The `X-Signature` header is missing. | `401 Unauthorized` |
-| `InvalidSignature` | The signature does not match. | `401 Unauthorized` |
-| `InvalidPayload` | The payload cannot be parsed. | `400 Bad Request` |
-| `MissingData` | Required event fields are missing. | `422 Unprocessable Entity` |
-
-The SDK exposes these outcomes through `WebhookResult.Status` and `WebhookResult.Error`, allowing applications to handle failures without implementing signature validation and payload parsing themselves.
+| `WebhookStatus`    | Meaning                                         | HTTP status |
+| ------------------ | ----------------------------------------------- | ----------: |
+| `Valid`            | Signature and required event data are valid.    |    `200 OK` |
+| `MissingSignature` | The `X-Signature` header is missing.            | `401 Unauthorized` |
+| `InvalidSignature` | The signature does not match.                   | `401 Unauthorized` |
+| `InvalidPayload`   | The payload cannot be parsed.                   | `400 Bad Request` |
+| `MissingData`      | Required event fields are missing.              | `422 Unprocessable Entity` |
 
 ### Successful response
 
-When the webhook is valid and processed successfully, return `200 OK`.
-
-Example response:
+When the webhook is valid and processed successfully, return `200 OK`:
 
 ```json
 {
@@ -1037,99 +1035,60 @@ The exact fields inside `data` depend on the event payload.
 
 ### Error response
 
-If validation fails, return the HTTP status suggested by `WebhookResult.StatusCode`.
-
-Example response for an invalid signature:
+If validation fails, return the HTTP status suggested by `WebhookResult.StatusCode`. Example for an invalid signature (`401 Unauthorized`):
 
 ```json
 {
   "received": false,
   "status": "InvalidSignature",
-  "error": "Assinatura inválida."
+  "error": "Invalid signature."
 }
 ```
-
-The response code is `401 Unauthorized`.
 
 **Response handling guidelines:**
 
-- Return `200 OK` after a valid event has been accepted and processed successfully.
-- Return `400 Bad Request` for an invalid payload.
-- Return `422 Unprocessable Entity` when required event data is missing.
-- Return `401 Unauthorized` when the signature is missing or invalid.
-- Do not return `200 OK` for a validation failure.
-- Configure logging and monitoring for rejected events, and follow the application's retry and reconciliation strategy.
+* Return `200 OK` after a valid event has been accepted and processed.
+* Return `400 Bad Request` for an invalid payload.
+* Return `422 Unprocessable Entity` when required event data is missing.
+* Return `401 Unauthorized` when the signature is missing or invalid.
+* Do not return `200 OK` for a validation failure.
+* Configure logging and monitoring for rejected events.
 
-## 4. Supported webhook event types
+## 4. Supported event types
 
-The SDK maps recognized webhook event names to `WebhookEventType`:
+| Event type       | Description                                  |
+| ---------------- | -------------------------------------------- |
+| `PaymentSuccess` | A payment succeeded.                         |
+| `PaymentFailed`  | A payment failed.                            |
+| `PayoutSuccess`  | A payout succeeded.                          |
+| `PayoutFailed`   | A payout failed.                             |
+| `RefundSuccess`  | A refund succeeded.                          |
+| `RefundFailed`   | A refund failed.                             |
+| `Unknown`        | The event name is not recognized by the SDK. |
 
-| Event type | Description |
-|---|---|
-| `PaymentSuccess` | A payment succeeded. |
-| `PaymentFailed` | A payment failed. |
-| `PayoutSuccess` | A payout succeeded. |
-| `PayoutFailed` | A payout failed. |
-| `RefundSuccess` | A refund succeeded. |
-| `RefundFailed` | A refund failed. |
-| `Unknown` | The event name is not recognized by the SDK. |
+Use `WebhookResult.Type` to route events to the appropriate business logic. A valid signature and valid required data can produce a valid result with `Type = Unknown`; handle this case safely.
 
-Use `WebhookResult.Type` to route events to the appropriate business logic. A valid signature and valid required data can produce a valid result with `Type = Unknown`; applications should handle this case safely.
+## 5. Security considerations
 
-## 5. Important security considerations
+* Always validate incoming requests using `PaySuiteWebhook.ProcessAsync` or `PaySuiteWebhook.Process`.
+* Preserve the original request body when validating signatures. Do not deserialize and reserialize the JSON before verification.
+* Read the signature from the `X-Signature` header.
+* Keep `PAYSUITE_WEBHOOK_SECRET` secure.
+* Use HTTPS in production.
+* Persist event identifiers and process events idempotently.
+* Do not acknowledge an event before the required business operation has completed or has been durably accepted for processing.
 
-- Always validate incoming requests using `PaySuiteWebhook.ProcessAsync` or `PaySuiteWebhook.Process`.
-- Preserve the original request body when validating signatures. Do not deserialize and reserialize the JSON before signature verification.
-- Read the signature from the `X-Signature` header.
-- Keep `PAYSUITE_WEBHOOK_SECRET` secure.
-- Use HTTPS in production.
-- Persist important event identifiers and implement idempotent processing.
-- Do not acknowledge an event as successfully processed before the required business operation has completed or has been durably accepted for processing.
-
-For applications that already have the raw request body available, use `PaySuiteWebhook.Process(rawBody, signature, secret)`.
-
-
-
-If the API provides a signature for webhook validation, your application must validate the signature before processing the received data.
-
-Generic example using HMAC SHA-256:
+If you already have the raw request body available, use the synchronous variant:
 
 ```csharp
-using System.Security.Cryptography;
-using System.Text;
-
-public static bool VerifySignature(
-    string payload,
-    string signature,
-    string secret)
-{
-    using var hmac = new HMACSHA256(
-        Encoding.UTF8.GetBytes(secret)
-    );
-
-    var hash = hmac.ComputeHash(
-        Encoding.UTF8.GetBytes(payload)
-    );
-
-    var expectedSignature =
-        Convert.ToHexString(hash).ToLowerInvariant();
-
-    return CryptographicOperations.FixedTimeEquals(
-        Encoding.UTF8.GetBytes(expectedSignature),
-        Encoding.UTF8.GetBytes(signature)
-    );
-}
+var result = PaySuiteWebhook.Process(rawBody, signature, secret);
 ```
-
-The final implementation must follow the signature mechanism defined in the official PaySuite documentation.
 
 ---
 
 # ⚠️ Error handling
 
 The SDK performs local validations before sending some requests.
-
-Example:
 
 ```csharp
 try
@@ -1168,52 +1127,31 @@ catch (Exception ex)
 
 ## Payments
 
-The SDK validates, among other rules:
-
 * `amount` between `10` and `1,000,000`
-* `reference` is required
-* `reference` maximum of 50 characters
-* `description` maximum of 125 characters
-* `return_url` is valid when provided
-* `webhook_url` is valid when provided
-
-Supported methods:
-
-```text
-credit_card
-mpesa
-emola
-```
-
----
+* `reference` is required, maximum 50 characters
+* `description` maximum 125 characters
+* `return_url` is a valid URL when provided
+* `webhook_url` is a valid URL when provided
+* Supported methods: `credit_card`, `mpesa`, `emola`
 
 ## Payouts
 
-The SDK validates:
-
 * `amount` between `1` and `1,000,000`
-* `currency = MZN`
-* `reference` is required
-* `reference` is alphanumeric
-* `reference` maximum of 30 characters
-* `description` maximum of 255 characters
-* supported method
-* mobile phone number with 9 digits
-* bank NIB with 21 digits
+* `currency` is `MZN`
+* `reference` is required, alphanumeric, maximum 30 characters
+* `description` maximum 255 characters
+* Supported method
+* Mobile phone number with 9 digits
+* Bank NIB with 21 digits
 * `holder` is required
-* `webhook_url` is valid when provided
-
----
+* `webhook_url` is a valid URL when provided
 
 ## Refunds
 
-The following are validated:
-
 * `payment_id` is required
-* valid `amount`
-* `reason` is required
-* `reason` maximum of 500 characters
-* `webhook_url` is valid when provided
+* Valid `amount`
+* `reason` is required, maximum 500 characters
+* `webhook_url` is a valid URL when provided
 
 ---
 
@@ -1241,8 +1179,6 @@ This lets you integrate the SDK with your own `HttpClient` configuration, handle
 
 # ⚙️ PaySuiteOptions
 
-Example:
-
 ```csharp
 var options = new PaySuiteOptions
 {
@@ -1261,18 +1197,12 @@ using var client = new PaySuiteClient(
 
 # 🧪 Quick test
 
-To quickly test the SDK with a Console application:
+To quickly test the SDK with a console application:
 
 ```bash
 dotnet new console -n PaySuite.Test
 cd PaySuite.Test
-```
-
-Add a reference to the local SDK:
-
-```bash
-dotnet add reference \
-    ../PaySuite.Sdk/src/PaySuite.Sdk/PaySuite.Sdk.csproj
+dotnet add package PaySuite.Sdk
 ```
 
 Configure the token:
@@ -1296,41 +1226,19 @@ if (string.IsNullOrWhiteSpace(token))
 
 using var client = new PaySuiteClient(token);
 
-var fetchedPayment =
-    await client.Payments.GetAsync(
-        "01m487646hbykkwxzvknchfp0w"
-    );
+var response = await client.Payments.GetAsync(
+    "01m487646hbykkwxzvknchfp0w"
+);
 
 Console.WriteLine();
 Console.WriteLine("Payment retrieved:");
-
-Console.WriteLine(
-    $"  Success   : {fetchedPayment.Success}"
-);
-
-Console.WriteLine(
-    $"  Message   : {fetchedPayment.Message}"
-);
-
-Console.WriteLine(
-    $"  Status    : {fetchedPayment.Status}"
-);
-
-Console.WriteLine(
-    $"  Id        : {fetchedPayment.Data?.Id}"
-);
-
-Console.WriteLine(
-    $"  Amount    : {fetchedPayment.Data?.Amount} MZN"
-);
-
-Console.WriteLine(
-    $"  Reference : {fetchedPayment.Data?.Reference}"
-);
-
-Console.WriteLine(
-    $"  PayStatus : {fetchedPayment.Data?.Status}"
-);
+Console.WriteLine($"  Success   : {response.Success}");
+Console.WriteLine($"  Message   : {response.Message}");
+Console.WriteLine($"  Status    : {response.Status}");
+Console.WriteLine($"  Id        : {response.Data?.Id}");
+Console.WriteLine($"  Amount    : {response.Data?.Amount} MZN");
+Console.WriteLine($"  Reference : {response.Data?.Reference}");
+Console.WriteLine($"  PayStatus : {response.Data?.Status}");
 ```
 
 Run:
@@ -1343,21 +1251,23 @@ dotnet run
 
 # 🔧 Local development
 
-During development, you can reference the SDK project directly:
+During development, you can reference the SDK project directly instead of the NuGet package:
 
 ```bash
 dotnet add reference \
-    ../PaySuite.Sdk/src/PaySuite.Sdk/PaySuite.Sdk.csproj
+    ../paysuite-dotnet-sdk/src/PaySuite.Sdk/PaySuite.Sdk.csproj
 ```
 
-This lets you test changes immediately without having to create and install a new NuGet package.
+This lets you test changes immediately without creating and installing a new NuGet package.
+
+The repository also includes a console project in `samples/PaySuite.Sdk.Playground` for trying the SDK.
 
 ---
 
 # 📁 Project structure
 
 ```text
-PaySuite.Sdk/
+paysuite-dotnet-sdk/
 ├── compose.yaml
 ├── Dockerfile
 ├── .dockerignore
@@ -1386,9 +1296,15 @@ PaySuite.Sdk/
 │       │   ├── RefundsResource.cs
 │       │   └── ContactsResource.cs
 │       │
+│       ├── Webhooks/
+│       │   └── ...
+│       │
 │       ├── PaySuiteClient.cs
 │       ├── PaySuiteOptions.cs
 │       └── ...
+│
+├── samples/
+│   └── PaySuite.Sdk.Playground/
 │
 └── tests/
     └── PaySuite.Sdk.Tests/
@@ -1398,8 +1314,6 @@ PaySuite.Sdk/
 ---
 
 # 🏗️ Architecture
-
-The SDK architecture roughly follows:
 
 ```text
 Application
@@ -1428,24 +1342,9 @@ PaySuiteClient
 using var client = new PaySuiteClient(token);
 ```
 
-Resources are available through the client:
+## ApiClient
 
-```csharp
-client.Payments
-client.Payouts
-client.Refunds
-client.Contacts
-```
-
----
-
-# 📡 ApiClient
-
-`ApiClient` is responsible for HTTP communication with the API.
-
-Resources do not need to work with `HttpClient` directly.
-
-For example:
+`ApiClient` is responsible for HTTP communication with the API, so resources never work with `HttpClient` directly:
 
 ```csharp
 return _api.GetDataAsync<Payment>(
@@ -1455,53 +1354,23 @@ return _api.GetDataAsync<Payment>(
 );
 ```
 
-The result is:
+The result is an `ApiResponse<Payment>`.
+
+## Resources
+
+Resources provide a domain-oriented API. Instead of:
 
 ```csharp
-ApiResponse<Payment>
-```
-
-This keeps responsibilities separate:
-
-```text
-Resource
-   ↓
-ApiClient
-   ↓
-HttpClient
-   ↓
-API
-```
-
----
-
-# 📦 Resources
-
-Resources provide a domain-oriented API.
-
-Instead of:
-
-```csharp
-httpClient.GetAsync(
-    $"payments/{id}"
-);
+httpClient.GetAsync($"payments/{id}");
 ```
 
 the consumer uses:
 
 ```csharp
 await client.Payments.GetAsync(id);
-```
-
-Likewise:
-
-```csharp
 await client.Payments.CreateAsync(request);
-
 await client.Payouts.CreateAsync(request);
-
 await client.Refunds.CreateAsync(request);
-
 await client.Contacts.CreateAsync(request);
 ```
 
@@ -1521,11 +1390,12 @@ Create the package:
 dotnet pack -c Release
 ```
 
-The package will be created in:
+The package is created in:
 
 ```text
 bin/Release/
 ```
+
 ---
 
 # 🔒 Security
@@ -1540,9 +1410,7 @@ var token = "your-token";
 Prefer:
 
 ```csharp
-var token = Environment.GetEnvironmentVariable(
-    "PAYSUITE_TOKEN"
-);
+var token = Environment.GetEnvironmentVariable("PAYSUITE_TOKEN");
 ```
 
 ---
@@ -1553,39 +1421,26 @@ Clone the project:
 
 ```bash
 git clone https://github.com/LazaroMagaia/paysuite-dotnet-sdk.git
-```
-
-Enter the directory:
-
-```bash
 cd paysuite-dotnet-sdk
 ```
 
-Restore dependencies:
+Restore dependencies and run the tests:
 
 ```bash
 dotnet restore
-```
-
-Run the tests:
-
-```bash
 dotnet test
 ```
 
-Create a branch:
+Create a branch, commit and push:
 
 ```bash
 git checkout -b feature/my-feature
-```
-
-Then:
-
-```bash
 git add .
 git commit -m "feat: add new feature"
 git push origin feature/my-feature
 ```
+
+Then open a Pull Request.
 
 ---
 
@@ -1595,13 +1450,9 @@ See the `LICENSE` file for the full license terms.
 
 ---
 
-# ⚠️ Disclaimer
+# 📖 Reference
 
-This project is an SDK developed by the community and has no official affiliation with PaySuite.
-
-PaySuite and its respective products, services, financial services and trademarks belong to their respective owners.
-
-For official information about endpoints, authentication, parameters, webhooks, limits and API behavior, see:
+For information about endpoints, authentication, parameters, webhooks, limits and API behavior, see the official documentation:
 
 https://paysuite.tech/docs
 
@@ -1609,7 +1460,7 @@ https://paysuite.tech/docs
 
 # 👨‍💻 Author
 
-Developed by **Lázaro Magaia**.
+Developed by **Hypertech, LDA**.
 
 GitHub:
 
