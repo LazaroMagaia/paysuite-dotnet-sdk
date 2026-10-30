@@ -1,0 +1,61 @@
+
+name: Publish PaySuite SDK to NuGet
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    name: Build, Test and Publish
+    runs-on: ubuntu-24.04
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Setup .NET SDKs
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: |
+            8.0.x
+            10.0.x
+
+      - name: Restore dependencies
+        run: dotnet restore PaySuite.Sdk.slnx
+
+      - name: Build solution
+        run: dotnet build PaySuite.Sdk.slnx --configuration Release --no-restore
+
+      - name: Run tests
+        run: dotnet test PaySuite.Sdk.slnx --configuration Release --no-build --no-restore
+
+      - name: Pack NuGet package
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          dotnet pack src/PaySuite.Sdk/PaySuite.Sdk.csproj \
+            --configuration Release \
+            --no-build \
+            --output ./artifacts \
+            -p:PackageVersion="$VERSION"
+
+      - name: NuGet login (Trusted Publishing)
+        uses: NuGet/login@v1
+        id: login
+        with:
+          user: ${{ secrets.NUGET_USER }}
+
+      - name: Publish to NuGet
+        run: |
+          dotnet nuget push ./artifacts/*.nupkg \
+            --api-key "${{ steps.login.outputs.NUGET_API_KEY }}" \
+            --source https://api.nuget.org/v3/index.json \
+            --skip-duplicate
